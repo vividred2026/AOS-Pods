@@ -48,6 +48,8 @@ object AapSession {
                 is Aap.Msg.Info -> {
                     info.value = m; infoFresh.value = true
                     try { prefs.saveAapInfo(key, m) } catch (_: Exception) {}
+                    // 에어팟이 알려준 모델 번호로 모델 설정 자동 반영
+                    if (prefs.applyDetectedModel(ModelDetect.fromModelNumber(m.modelNumber))) PodsRepo.modelVersion.value++
                     if (m.name.isNotBlank()) {
                         if (m.name == pendingName.value) pendingName.value = null
                         BtState.connectedName.value = m.name   // 에어팟이 알려준 실제 이름으로 표시

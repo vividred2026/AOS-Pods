@@ -21,6 +21,19 @@ class Prefs(context: Context) {
         get() = sp.getString("model", "에어팟 4") ?: "에어팟 4"
         set(v) = sp.edit { putString("model", v) }
 
+    /** 모델을 연결된 에어팟 신호(BLE 모델 ID · AACP 모델 번호)에서 자동으로 맞췄는지. 직접 고르면 false. */
+    var modelAuto: Boolean
+        get() = sp.getBoolean("model_auto", false)
+        set(v) = sp.edit { putBoolean("model_auto", v) }
+
+    /** 신호에서 알아낸 모델로 설정을 맞춘다. 바뀌었으면 true. */
+    fun applyDetectedModel(detected: String?): Boolean {
+        if (detected == null || detected !in MODELS) return false
+        if (model == detected && modelAuto) return false
+        model = detected; modelAuto = true
+        return true
+    }
+
     var notification: Boolean
         get() = sp.getBoolean("notification", true)
         set(v) = sp.edit { putBoolean("notification", v) }

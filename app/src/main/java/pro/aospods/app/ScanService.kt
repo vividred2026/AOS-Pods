@@ -28,6 +28,8 @@ object PodsRepo {
     val status = MutableStateFlow<String?>(null)
     /** 착용 신호(0x07) 수신 여부. null = 판단 전(연결 안 됨 등), true = 최근 수신, false = 연결 중인데 신호 없음. */
     val wearSignal = MutableStateFlow<Boolean?>(null)
+    /** 모델 설정이 바뀔 때마다 증가(자동 감지 반영용). */
+    val modelVersion = MutableStateFlow(0)
     /** 진단용: 마지막 에어팟(0x07) 패킷 원문 16진수 · 받은 시각 · 신호 세기. */
     @Volatile var lastRawHex: String = ""
     @Volatile var lastRawAt: Long = 0L
@@ -120,9 +122,13 @@ class ScanService : Service() {
                     PodsRepo.rawCount = c07
                     PodsRepo.addRecent(last07Hex, result.rssi)
                 }
-                val pods = AirPodsParser.parse(data, prefs.model) ?: return
                 // 이 폰에 에어팟(오디오 기기)이 연결돼 있을 때만 배터리 처리
                 if (BtState.connectedName.value == null) return
+                // 연결된 에어팟의 광고라면 모델 ID로 모델 설정을 자동으로 맞춤(잘못 골라도 바로잡힘)
+                AirPodsParser.findProximity(data)?.let { p ->
+                    if (prefs.applyDetectedModel(ModelDetect.fromProximity(p))) PodsRepo.modelVersion.value++
+                }
+                val pods = AirPodsParser.parse(data, prefs.model) ?: return
                 if (pods.hasAny) {
                     if (cPods == 0) PodsRepo.status.value = "에어팟 감지 ${pods.left}/${pods.right}/${pods.case}%"
                     cPods++

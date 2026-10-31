@@ -69,6 +69,7 @@ app/src/main/java/pro/aospods/app/
 │                           + PodsRepo(앱 전역 상태: pods/running/error/status/진단값)
 ├─ BtState.kt               연결된 오디오 기기 이름, HFP 전체 배터리, 연결/해제/배터리 방송 수신
 ├─ AirPods.kt               Pods 데이터 클래스 + AirPodsParser(findProximity/messageTypes/parse)
+├─ ModelDetect.kt         BLE 0x07 모델 ID(s[6..9]) · AACP 모델 번호 → 모델 설정 자동 반영 — 안드로이드 의존 없음
 ├─ WearDetector.kt          착용 감지 판단(2회 연속 확정 · 일시정지/재생 결정) — 안드로이드 의존 없음
 ├─ Aap.kt                   AACP(에어팟 전용 프로토콜) 메시지 정의·파서 — 안드로이드 의존 없음
 ├─ AapClient.kt             AACP L2CAP(0x1001) 연결 클라이언트 (숨김 생성자 반사)
@@ -88,7 +89,7 @@ app/src/main/java/pro/aospods/app/
 └─ PopupSettingsActivity.kt     N-03 팝업 제목·글자 크기·모서리·여백·어둡게·양쪽 착용 시 숨김
 
 app/src/test/  — 단위 테스트 + Robolectric
-  AirPodsParserTest(+ProximityTlvTest·WornCountTest) · AapTest · AppleAccEvTest · AutoPauseTest(+WearDetectorTest·PercentIconTest) · NotificationTest
+  AirPodsParserTest(+ProximityTlvTest·WornCountTest) · ModelDetectTest · AapTest · AppleAccEvTest · AutoPauseTest(+WearDetectorTest·PercentIconTest) · NotificationTest
   InteractionTest · SmokeTest · TileTest
 ```
 
@@ -112,7 +113,7 @@ app/src/test/  — 단위 테스트 + Robolectric
    - 연결 후 카드 탭 = 에어팟 정보(전용 채널 연결 시, 아니면 다시 연결) · 길게 누르기 = 다시 연결. 별도 "에어팟 정보" 행은 없앰
    - 폰트는 시스템 기본(디자인은 Pretendard) — 미적용
 2. 서비스 활성화
-3. 모델 (에어팟 1·2 / 에어팟 프로 / 파워비츠 프로 / 에어팟 3 / 에어팟 4)
+3. 모델 (에어팟 1·2 / 에어팟 프로 / 파워비츠 프로 / 에어팟 3 / 에어팟 4) — **연결된 에어팟 신호로 자동 맞춤**(`ModelDetect`: BLE 0x07 모델 ID `0E20`=프로·`1920/1B20`=4·`1320`=3·`0220/0F20`=1·2·`0B20`=파워비츠, AACP 모델 번호 A1523…A3058). 잘못 골라도 다음 신호에서 바로잡히며 요약에 "· 연결된 에어팟에서 확인" 표시(`Prefs.modelAuto`). 목록에 없는 제품(맥스·비츠)은 손대지 않음. 모델 값은 표시 이름에만 쓰이고 해석에는 영향 없음
 4. **배터리 표시**: 알림으로 표시 · 알림 아이콘에 퍼센트 표시 · 팝업 창으로 표시 (글자를 누르면 각 하위 설정, 스위치는 ON/OFF)
 5. **청취 모드** (AACP 연결 성공 시에만 표시): 노이즈 캔슬링 · 주변음 허용 · 적응형 · 끔
 6. **착용 감지**: 일시정지 · 다시 재생

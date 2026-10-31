@@ -64,7 +64,8 @@ class MainActivity : AppCompatActivity() {
         b.swPopup.isChecked = prefs.popup
         b.swPause.isChecked = prefs.autoPause
         b.swResume.isChecked = prefs.autoResume
-        b.modelValue.text = prefs.model
+        renderModel()
+        lifecycleScope.launch { PodsRepo.modelVersion.collect { renderModel() } }
         b.nightValue.text = nightLabel()
         b.footerVersion.text = "AosPods ${BuildConfig.VERSION_NAME} · 빌드 ${BuildConfig.BUILD_ID}"
 
@@ -267,8 +268,13 @@ class MainActivity : AppCompatActivity() {
     private fun showModelPicker() {
         val models = Prefs.MODELS
         Sheets.choice(this, "제품 선택", models, models.indexOf(prefs.model)) { w ->
-            prefs.model = models[w]; b.modelValue.text = models[w]
+            prefs.model = models[w]; prefs.modelAuto = false; renderModel()
         }
+    }
+
+    /** 모델 행 요약: 자동으로 맞춘 값이면 출처를 함께 표시. */
+    private fun renderModel() {
+        b.modelValue.text = if (prefs.modelAuto) "${prefs.model} · 연결된 에어팟에서 확인" else prefs.model
     }
 
     private fun nightLabel() =
