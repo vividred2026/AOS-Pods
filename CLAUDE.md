@@ -97,7 +97,10 @@ app/src/test/  — 단위 테스트 + Robolectric
 | 경로 | 언제 | 무엇을 | 코드 |
 |---|---|---|---|
 | **BLE 광고 (0x07)** | 주로 **케이스 뚜껑을 열 때** | 왼쪽·오른쪽·케이스 따로, 충전, 착용 | `ScanService` 콜백 → `AirPodsParser` |
-| **HFP 배터리** | **연결된 상태**(귀에 낀 상태 포함) | **전체 배터리 하나** | `BtState` — `BATTERY_LEVEL_CHANGED` 방송 + `getBatteryLevel()`(숨김 API, 반사 호출) |
+| **HFP 배터리** | **연결된 상태**(귀에 낀 상태 포함) | **전체 배터리 하나** | `BtState` — ① 에어팟이 직접 보내는 `AT+IPHONEACCEV`(공개 API `BluetoothHeadset.ACTION_VENDOR_SPECIFIC_HEADSET_EVENT`, 카테고리 `companyid.76`) ② `BATTERY_LEVEL_CHANGED` 방송 ③ `getBatteryLevel()`(숨김 API, 반사 — targetSdk 34에선 막힐 수 있음) |
+
+- 실기기에서 "연결됨 · 배터리 확인 중"에 멈춘 적 있음: 숨김 API 조회 실패 + `refresh()`가 실패할 때마다 이미 받은 값을 null로 덮어씀 → 덮어쓰기 제거, ① 경로 추가. [진단 정보]의 "배터리 경로"에 어디서 받았는지/왜 못 받았는지 표시.
+- ① ②는 값이 **바뀔 때(연결 직후·10% 단위)** 오므로, 앱을 연결 후에 켰다면 다음 변화까지 비어 있을 수 있음 → 에어팟을 케이스에 넣었다 빼서 재연결하면 즉시 받음.
 
 - 데모(가짜 85/85/55) 표시는 **완전히 제거**했습니다. 사용자가 가짜 값을 실제로 오인한 적이 있어서, 다시 넣지 마세요.
 
@@ -171,6 +174,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 | 하위 설정 변경이 바로 반영 안 됨 | 다음 패킷까지 대기 | 하위 화면 onPause에서 `ScanService.applySettings()` |
 | 큰/작은 알림 동시 ON 가능 | 독립 스위치 | 하나만 켜지도록 |
 | 타일에서 시작 실패 시 크래시 가능 | 백그라운드 FGS 시작 제한 미처리 | `start()`가 예외를 잡고 false → 앱 열기 |
+| 연결됐는데 HFP 배터리 계속 "확인 중" | 숨김 API 조회 실패 시 `refresh()`가 값을 null로 덮어씀 | 덮어쓰기 제거 + 공개 API `IPHONEACCEV` 수신 |
 | 팝업 제목이 모델명 | 기기 이름 미사용 | 연결된 기기 이름(없으면 모델명) |
 
 ---

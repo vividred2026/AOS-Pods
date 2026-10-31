@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
                         n == null -> "연결 안 됨 — 눌러서 에어팟과 페어링"
                         p != null && p.hasAny -> "연결됨 · $n · 왼 ${pct(p.left)} 오 ${pct(p.right)} 케이스 ${pct(p.case)}"
                         h != null -> "연결됨 · $n · 배터리 $h%"
-                        else -> "연결됨 · $n · 배터리 확인 중"
+                        else -> "연결됨 · $n · 배터리 확인 중 (케이스 뚜껑을 열면 왼·오·케이스 표시)"
                     }
                     b.btnPair.text = if (n == null) "연결하기" else "다시 연결"
                 }
@@ -429,6 +429,7 @@ class MainActivity : AppCompatActivity() {
         val hex = PodsRepo.lastRawHex
         val recent = synchronized(PodsRepo.recentRaw) { PodsRepo.recentRaw.toList() }
         val head = "연결: ${BtState.connectedName.value ?: "없음"} · HFP 배터리: ${BtState.hfpBattery.value?.let { "$it%" } ?: "없음"}\n" +
+            "배터리 경로: ${BtState.batteryNote}\n" +
             "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL}\n" +
             PodsRepo.diagLine + "\n\n"
         val text = head + if (hex.isEmpty()) {
