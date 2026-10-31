@@ -26,6 +26,10 @@
 - `1170-670` 메인 설정 화면 와이어프레임
 - `1170-855` 시스템 노출 UI — O-01 팝업 · O-02 알림/빠른 설정 타일
 - ※ 사용자 메모: 앞으로의 Figma 작업 저장 위치는 **"2027 A.I." 파일** (`vh1QqL0j3qhZA8jDOCujKH`)
+- **`1219-792` 05 앱 화면 (AosPods 1.0 현재 구현)** — 앱의 모든 화면·다이얼로그를 수정 가능한 와이어프레임으로 옮긴 것(같은 페이지 `++ aosPods - Complete`, 사용자 요청으로 Idea 파일에 작성)
+  - A 메인(M-00 연결 전·권한 / 연결 후 전체) · B 연결·페어링(D-01 안내 / D-02 기기 목록) · C 하위 설정(N-01~03) · D 에어팟 정보(I-01 / D-03 이름 변경 / D-04 청취 모드) · E 정보·진단(D-05 선택형 / D-06 진단 / D-07 AACP 로그) · F 시스템 UI(O-01 팝업 / O-02 알림·타일)
+  - 추가 컴포넌트(섹션 `00 Components`): `WF/PairCard`(State=연결 전/후 · Status/Name/Model) · `WF/PodChip`(Letter/Pct) · `WF/ChoiceRow`(Selected · Label) · `WF/DialogButton`(Label) · `WF/PopupPod`(Kind=Bud/Case · Label/Pct). 기존 `WF/PrefRow`·`WF/PrefCategory`·`WF/SeekRow`·`WF/StatusBar`·`WF/Toggle` 재사용
+  - 앱 UI를 바꾸면 이 섹션도 함께 갱신할 것
 
 ---
 
