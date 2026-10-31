@@ -122,6 +122,18 @@
                     android:textStyle="bold"/>
             </LinearLayout>
 
+            <!-- 에어팟 정보 · 이름 변경 (AACP 연결 시에만 표시) -->
+            <LinearLayout android:id="@+id/rowInfo" style="@style/Row"
+                android:clickable="true" android:focusable="true" android:visibility="gone">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="에어팟 정보"/>
+                    <TextView android:id="@+id/infoSub" style="@style/RowSub"
+                        android:text="모델 · 펌웨어 · 일련번호 · 이름 변경"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+            </LinearLayout>
+
             <!-- 서비스 활성화 -->
             <LinearLayout style="@style/Row">
                 <LinearLayout style="@style/RowText">

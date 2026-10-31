@@ -81,7 +81,10 @@ object BtState {
                 override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                     val dev = try { proxy.connectedDevices.firstOrNull() } catch (_: Exception) { null }
                     connectedDevice = dev
-                    connectedName.value = dev?.let { safeName(ctx, it) }
+                    // 에어팟이 AACP로 알려준 이름이 있으면 그걸 우선(이름 변경 직후 안드로이드는 옛 이름을 캐시함)
+                    connectedName.value = dev?.let {
+                        AapSession.info.value?.name?.takeIf { n -> n.isNotBlank() } ?: safeName(ctx, it)
+                    }
                     // 조회에 실패해도 방송으로 이미 받은 값은 지우지 않음(끊겼을 때만 지움)
                     if (dev == null) hfpBattery.value = null
                     else readBattery(dev)?.let { hfpBattery.value = it }

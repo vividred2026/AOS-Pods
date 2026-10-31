@@ -11,6 +11,10 @@ object AapSession {
     val connected = MutableStateFlow(false)
     /** 에어팟이 알려준 현재 청취 모드(Aap.MODE_*). null = 아직 보고 없음. */
     val listenMode = MutableStateFlow<Int?>(null)
+    /** 에어팟이 알려준 기기 정보(이름·모델·펌웨어·일련번호). null = 아직 없음. */
+    val info = MutableStateFlow<Aap.Msg.Info?>(null)
+    /** 이름 변경을 요청했지만 에어팟이 아직 새 정보로 확인해 주지 않은 이름. */
+    val pendingName = MutableStateFlow<String?>(null)
     /** 진단·실험 화면용 로그(최근 80줄). */
     val log = MutableStateFlow("")
 
@@ -32,6 +36,13 @@ object AapSession {
         val c = AapClient(adapter, dev, ::append, onConnected = { connected.value = true }) { m ->
             when (m) {
                 is Aap.Msg.ListenMode -> listenMode.value = m.mode
+                is Aap.Msg.Info -> {
+                    info.value = m
+                    if (m.name.isNotBlank()) {
+                        if (m.name == pendingName.value) pendingName.value = null
+                        BtState.connectedName.value = m.name   // 에어팟이 알려준 실제 이름으로 표시
+                    }
+                }
                 is Aap.Msg.Ear -> onEar?.invoke(m.wornCount)
                 is Aap.Msg.Batteries -> onBattery?.invoke(m.list)
                 is Aap.Msg.Other -> {}
@@ -44,7 +55,7 @@ object AapSession {
                     if (client === c) {
                         client = null
                         if (!c.everConnected) failedFor = dev
-                        connected.value = false; listenMode.value = null
+                        connected.value = false; listenMode.value = null; info.value = null
                     }
                 }
             }
@@ -57,11 +68,19 @@ object AapSession {
 
     private fun stopLocked() {
         client?.close(); client = null; device = null
-        connected.value = false; listenMode.value = null
+        connected.value = false; listenMode.value = null; info.value = null; pendingName.value = null
     }
 
     /** 청취 모드 변경 요청. 전송 실패 시 false. 실제 반영은 에어팟이 보내는 확인(listenMode)으로 판단. */
     fun setListenMode(mode: Int): Boolean = client?.send(Aap.listenModePacket(mode)) ?: false
+
+    /** 이름 변경 요청. 형식이 맞지 않거나(빈 이름·너무 김) 전송 실패 시 false. */
+    fun rename(name: String): Boolean {
+        val p = Aap.renamePacket(name) ?: return false
+        val ok = client?.send(p) ?: false
+        if (ok) pendingName.value = name.trim()
+        return ok
+    }
 
     private fun append(s: String) {
         val lines = (log.value + s + "\n").lines()

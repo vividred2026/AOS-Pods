@@ -111,10 +111,12 @@ class MainActivity : AppCompatActivity() {
             kotlinx.coroutines.flow.combine(AapSession.connected, AapSession.listenMode) { c, m -> c to m }
                 .collect { (c, m) ->
                     b.listenSection.visibility = if (c) View.VISIBLE else View.GONE
+                    b.rowInfo.visibility = if (c) View.VISIBLE else View.GONE
                     b.listenValue.text = Aap.modeName(m)
                 }
         }
         b.rowListen.setOnClickListener { showListenModePicker() }
+        b.rowInfo.setOnClickListener { open(InfoActivity::class.java) }
 
         // 착용 감지: 연결 중인데 에어팟이 착용 신호(0x07)를 보내지 않으면 솔직하게 안내
         lifecycleScope.launch {

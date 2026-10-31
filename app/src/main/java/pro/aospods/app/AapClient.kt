@@ -64,11 +64,14 @@ class AapClient(
                 val p = buf.copyOf(n)
                 val op = Aap.opcode(p)
                 val msg = Aap.parse(p)
-                if (msg != null && msg !is Aap.Msg.Other) {
+                if (op != null && op in Aap.PRIVATE_OPS) {
+                    // 주소·일련번호가 들어 있는 메시지: 원문은 남기지 않고 해석 결과만
+                    log("← " + if (msg != null && msg !is Aap.Msg.Other) Aap.describe(msg)
+                        else "메시지 0x%02X (주소·일련번호 포함이라 원문 생략)".format(op))
+                    if (msg != null) onMessage(msg)
+                } else if (msg != null && msg !is Aap.Msg.Other) {
                     log("← ${Aap.describe(msg)}\n   ${hex(p)}")
                     onMessage(msg)
-                } else if (op != null && op in Aap.PRIVATE_OPS) {
-                    log("← 메시지 0x%02X (주소·일련번호 포함이라 원문 생략)".format(op))
                 } else {
                     log("← ${hex(p.copyOf(minOf(n, 48)))}" + if (n > 48) " …(${n}B)" else "")
                 }

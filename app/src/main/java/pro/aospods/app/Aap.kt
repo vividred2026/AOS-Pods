@@ -20,6 +20,18 @@ object Aap {
     const val OP_BATTERY = 0x04
     const val OP_EAR = 0x06
     const val OP_CONTROL = 0x09
+    const val OP_RENAME = 0x1A
+    const val OP_INFO = 0x1D
+
+    /** 이름 최대 길이(UTF-8 바이트). 너무 긴 이름은 기기마다 잘리거나 거부될 수 있어 보수적으로 제한. */
+    const val NAME_MAX_BYTES = 32
+
+    /** 이름 변경: 04 00 04 00 1A 00 01 [길이] 00 [이름 UTF-8]. 비었거나 너무 길면 null. */
+    fun renamePacket(name: String): ByteArray? {
+        val n = name.trim().toByteArray(Charsets.UTF_8)
+        if (n.isEmpty() || n.size > NAME_MAX_BYTES) return null
+        return bytes(0x04, 0x00, 0x04, 0x00, OP_RENAME, 0x00, 0x01, n.size, 0x00) + n
+    }
     /** 제어 메시지(0x09) 안의 '청취 모드' 항목. */
     const val CTRL_LISTEN_MODE = 0x0D
 
@@ -52,6 +64,12 @@ object Aap {
             val wornCount: Int get() = listOf(primary, secondary).count { it == Place.IN_EAR }
         }
         data class ListenMode(val mode: Int) : Msg()
+        /** 기기 정보(0x1D). 일련번호가 들어 있으므로 로그에는 원문을 남기지 않는다. */
+        data class Info(
+            val name: String, val modelNumber: String, val manufacturer: String,
+            val serial: String, val firmware: String,
+            val leftSerial: String, val rightSerial: String,
+        ) : Msg()
         data class Other(val opcode: Int) : Msg()
     }
 
@@ -84,11 +102,32 @@ object Aap {
                 if (p.size < 8) return null
                 Msg.Ear(place(p[6].u()), place(p[7].u()))
             }
+            OP_INFO -> parseInfo(p)
             OP_CONTROL -> {
                 if (p.size >= 8 && p[6].u() == CTRL_LISTEN_MODE) Msg.ListenMode(p[7].u()) else Msg.Other(op)
             }
             else -> Msg.Other(op)
         }
+    }
+
+    /** 0x1D: [04 00 04 00 1D 00][바이너리 헤더][문자열\0]… — 0으로 나눈 조각 중
+     *  제어 문자(0x20 미만)가 섞인 앞쪽 헤더 조각은 버리고, 나머지를 순서대로 읽는다.
+     *  순서: 이름 · 모델 번호 · 제조사 · 일련번호 · 펌웨어 · 펌웨어2 · 소프트웨어 · 업데이터 ID · 왼쪽 일련번호 · 오른쪽 일련번호 … */
+    private fun parseInfo(p: ByteArray): Msg? {
+        if (p.size <= 6) return null
+        val tokens = mutableListOf<ByteArray>()
+        var start = 6
+        for (i in 6..p.size) {
+            if (i == p.size || p[i].toInt() == 0) {
+                if (i > start) tokens += p.copyOfRange(start, i)
+                start = i + 1
+            }
+        }
+        val strings = tokens.dropWhile { t -> t.any { (it.toInt() and 0xFF) < 0x20 } }
+            .map { it.toString(Charsets.UTF_8) }
+        if (strings.isEmpty()) return null
+        fun s(i: Int) = strings.getOrNull(i).orEmpty()
+        return Msg.Info(s(0), s(1), s(2), s(3), s(4), s(8), s(9))
     }
 
     private fun place(v: Int) = when (v) {
@@ -106,6 +145,7 @@ object Aap {
         }
         is Msg.Ear -> "착용: 주 유닛 ${placeName(m.primary)} · 보조 ${placeName(m.secondary)} → 끼고 있는 개수 ${m.wornCount}"
         is Msg.ListenMode -> "청취 모드: ${modeName(m.mode)}"
+        is Msg.Info -> "기기 정보: ${m.name} · ${m.modelNumber} · 펌웨어 ${m.firmware}"   // 일련번호는 로그에 남기지 않음
         is Msg.Other -> "기타 메시지 0x%02X".format(m.opcode)
     }
 

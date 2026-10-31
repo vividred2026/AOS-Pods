@@ -43,6 +43,31 @@ class AapTest {
             Aap.listenModePacket(Aap.MODE_ADAPTIVE).joinToString(" ") { "%02X".format(it) })
     }
 
+    @Test fun parsesInfo() {
+        // 실제 형식: 바이너리 헤더(02 D5 00 04 00) 뒤에 0으로 끝나는 문자열들
+        fun z(s: String) = s.toByteArray() + byteArrayOf(0)
+        val p = hex("04 00 04 00 1D 00 02 D5 00 04 00") +
+            z("내 에어팟") + z("A3048") + z("Apple Inc.") + z("SERIAL00") + z("81.2675") +
+            z("81.2675") + z("1.0.0") + z("com.apple.accessory.updater.app.71") + z("LEFT0001") + z("RIGHT001")
+        val m = Aap.parse(p) as Aap.Msg.Info
+        assertEquals("내 에어팟", m.name)
+        assertEquals("A3048", m.modelNumber)
+        assertEquals("Apple Inc.", m.manufacturer)
+        assertEquals("SERIAL00", m.serial)
+        assertEquals("81.2675", m.firmware)
+        assertEquals("LEFT0001", m.leftSerial)
+        assertEquals("RIGHT001", m.rightSerial)
+        assertFalse("기기 정보 로그에 일련번호를 남기지 않음", Aap.describe(m).contains("SERIAL00"))
+    }
+
+    @Test fun renamePacket() {
+        assertEquals("04 00 04 00 1A 00 01 03 00 41 42 43",
+            Aap.renamePacket(" ABC ")!!.joinToString(" ") { "%02X".format(it) })
+        assertEquals("한글은 UTF-8 바이트 수로 길이 표시", 6, Aap.renamePacket("에어")!![7].toInt())
+        assertNull(Aap.renamePacket("   "))
+        assertNull(Aap.renamePacket("가".repeat(11)))   // 33바이트 > 32
+    }
+
     @Test fun otherAndInvalid() {
         assertEquals(Aap.Msg.Other(0x09), Aap.parse(hex("04 00 04 00 09 00 28 01 00 00 00")))
         assertNull(Aap.parse(hex("01 00 04 00 06 00 00 00")))

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/bg">
+    <include android:id="@+id/appbar" layout="@layout/appbar"/>
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp">
+
+            <TextView android:id="@+id/infoStatus"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:textColor="@color/muted" android:textSize="13sp"
+                android:text="에어팟 정보를 받는 중…"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_bg"
+                android:paddingVertical="8dp" android:paddingHorizontal="4dp">
+
+                <LinearLayout android:id="@+id/rowName" style="@style/Row"
+                    android:clickable="true" android:focusable="true">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="이름"/>
+                        <TextView android:id="@+id/nameValue" style="@style/RowSub" android:text="--"/>
+                    </LinearLayout>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="변경" android:textColor="@color/orange" android:textSize="14sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+                <View style="@style/Divider"/>
+
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="모델 번호"/>
+                        <TextView android:id="@+id/modelValue" style="@style/RowSub" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="펌웨어"/>
+                        <TextView android:id="@+id/firmwareValue" style="@style/RowSub" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="제조사"/>
+                        <TextView android:id="@+id/makerValue" style="@style/RowSub" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <View style="@style/Divider"/>
+
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="일련번호"/>
+                        <TextView android:id="@+id/serialValue" style="@style/RowSub"
+                            android:textIsSelectable="true" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="왼쪽 · 오른쪽 일련번호"/>
+                        <TextView android:id="@+id/budSerialValue" style="@style/RowSub"
+                            android:textIsSelectable="true" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <View style="@style/Divider"/>
+
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="배터리"/>
+                        <TextView android:id="@+id/batteryValue" style="@style/RowSub" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="청취 모드"/>
+                        <TextView android:id="@+id/listenInfoValue" style="@style/RowSub" android:text="--"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

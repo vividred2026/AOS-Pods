@@ -32,6 +32,7 @@
         <activity android:name=".NotifSettingsActivity" android:exported="false"/>
         <activity android:name=".PercentSettingsActivity" android:exported="false"/>
         <activity android:name=".PopupSettingsActivity" android:exported="false"/>
+        <activity android:name=".InfoActivity" android:exported="false"/>
         <service android:name=".ScanService"
             android:enabled="true"
             android:exported="false"
