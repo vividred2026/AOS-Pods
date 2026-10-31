@@ -23,12 +23,16 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.AosPods"
         android:supportsRtl="true">
-        <activity android:name=".MainActivity" android:exported="true">
+        <!-- S-01 스플래시 → (처음이면) S-02 권한 안내 → 메인 -->
+        <activity android:name=".SplashActivity" android:exported="true"
+            android:theme="@style/Theme.AosPods.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity android:name=".PermissionActivity" android:exported="false"/>
+        <activity android:name=".MainActivity" android:exported="false"/>
         <activity android:name=".NotifSettingsActivity" android:exported="false"/>
         <activity android:name=".PercentSettingsActivity" android:exported="false"/>
         <activity android:name=".PopupSettingsActivity" android:exported="false"/>

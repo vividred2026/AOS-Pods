@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="orange">#FFFF8A1F</color>
-    <color name="orange_bg">#FF3A2A17</color>
+    <color name="accent">#FFA27BEF</color>
+    <color name="accent_bg">#FF2A2140</color>
+    <color name="splash_start">#FF9435C0</color>
+    <color name="splash_end">#FF5D22BB</color>
+    <color name="grey900">#FFF0F1F3</color>
+    <color name="grey600">#FFAEB2BA</color>
+    <color name="grey_border">#FF2B2E34</color>
+    <color name="grey_line">#FF3A3E46</color>
+    <color name="switch_off">#FF3A3E46</color>
     <color name="ink">#FFF0F1F3</color>
     <color name="sub">#FFAEB2BA</color>
     <color name="muted">#FF8A8F98</color>

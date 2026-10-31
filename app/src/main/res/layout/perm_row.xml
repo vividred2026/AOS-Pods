@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 권한 한 줄 (Figma S-02 row): 체크 28 · 이름(굵게 14) · 사유(12, 회색) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="12dp"
+    android:background="?attr/selectableItemBackground">
+    <ImageView
+        android:id="@+id/permCheck"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:src="@drawable/ic_check_box_off"
+        android:contentDescription="@null"/>
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/permTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/grey900"
+            android:textSize="14sp"
+            android:fontFamily="@font/pretendard_bold"/>
+        <TextView
+            android:id="@+id/permReason"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/grey600"
+            android:textSize="12sp"
+            android:fontFamily="@font/pretendard_medium"/>
+    </LinearLayout>
+</LinearLayout>

@@ -71,6 +71,9 @@ app/src/main/java/pro/aospods/app/
 ├─ AapClient.kt             AACP L2CAP(0x1001) 연결 클라이언트 (숨김 생성자 반사)
 ├─ AapSession.kt            AACP 상시 연결(앱 전역 하나) — ScanService가 에어팟 연결/해제에 맞춰 시작·정지, 청취 모드 상태
 ├─ InfoActivity.kt          에어팟 정보(AACP 0x1D: 이름·모델 번호·펌웨어·제조사·일련번호) · 이름 변경(0x1A)
+├─ SplashActivity.kt        S-01 스플래시(런처)
+├─ PermissionActivity.kt    S-02 접근 권한 안내 + 위치 권한 이유 시트
+├─ Sheets.kt                공용 하단 시트(선택 목록 · 본문+버튼)
 ├─ Perms.kt                 필수 런타임 권한 목록·확인 (MainActivity · 타일 공용)
 ├─ PodsOverlay.kt           시스템 오버레이 배터리 팝업(O-01), 닫기(X) 버튼
 ├─ PercentIcon.kt           상태바용 퍼센트 숫자 아이콘(5% 단위) 생성
@@ -85,6 +88,14 @@ app/src/test/  — 단위 테스트 + Robolectric
   AirPodsParserTest(+ProximityTlvTest·WornCountTest) · AapTest · AppleAccEvTest · AutoPauseTest(+WearDetectorTest·PercentIconTest) · NotificationTest
   InteractionTest · SmokeTest · TileTest
 ```
+
+### 디자인 시스템 (Figma `++ aosPods - Complete` 페이지 아래쪽 보라 테마 화면, 2026-10-31 적용)
+- **브랜드 보라 `#5D22BB`**(`@color/accent`, 다크 `#A27BEF`) — 스위치 트랙·카테고리·[연결]·칩·버튼. 옛 주황(`orange`)은 전부 `accent`로 교체
+- **폰트 Pretendard**(OFL, `res/font/pretendard*.otf` — 자주 쓰는 한글 2,350자+영문·기호로 줄여 약 1.8MB, 라이선스 `assets/licenses/Pretendard-OFL.txt`). 없는 글자는 시스템 폰트로 대체
+- 로고·아이콘은 Figma 노드를 `exportAsync(SVG)`로 받아 VectorDrawable로 변환(`logo_bar` 메인 앱바 · `logo_perm` S-02 · `logo_splash`/`logo_befree` S-01 · `ic_check_box_*` · `ic_check_circle_*` · `ic_close`). figma.com 에셋 URL은 이 환경에서 막혀 있음
+- **S-01 스플래시**(`SplashActivity`, 런처, 1.2초) → 처음이면 **S-02 접근 권한 안내**(`PermissionActivity`: 체크=허용됨, 줄 탭=그 권한만 요청, [동의합니다]=전부 요청 → 다른 앱 위에 표시 → 메인, [나중에 설정하기]) → 메인. 위치(11 이하)는 먼저 **위치 권한 이유 시트**
+- **하단 시트**(`Sheets.kt`, Figma bottomsheetHeader): 청취 모드 · 제품 선택(모델) · 다크 모드 · 퍼센트 기준 = 체크 목록 / 진단 정보 = 본문 + [AACP 테스트] 링크 + [복사][닫기] / AACP 연결 테스트 = 실시간 로그 + [복사][닫기]. 이름 변경·페어링 안내·기기 목록은 기존 다이얼로그(보라 강조)
+- 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8. 디자인의 "에이팟 연결"은 오타로 보고 "에어팟 연결" 유지
 
 ### 메인 화면 구성 (위에서부터)
 1. **에어팟 연결 카드** (Figma `1170-719` 안의 `1215:2013` 연결 전 / `1215:1992` 연결 후, 회색 `#EAEAEA` 모서리 12)

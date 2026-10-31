@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="orange">#FFFF7A00</color>
-    <color name="orange_bg">#FFFFF1E6</color>
+    <!-- 브랜드 보라 (Figma S-01·S-02·메인 #5D22BB) -->
+    <color name="accent">#FF5D22BB</color>
+    <color name="accent_bg">#FFF0E9FA</color>
+    <color name="splash_start">#FF9435C0</color>
+    <color name="splash_end">#FF5D22BB</color>
+    <!-- 권한 안내 · 하단 시트 (Figma 디자인 시스템 회색) -->
+    <color name="grey900">#FF101214</color>
+    <color name="grey600">#FF6C7883</color>
+    <color name="grey_border">#FFD0D7DC</color>
+    <color name="grey_line">#FFADB9C2</color>
+    <color name="switch_off">#FFE1E4E8</color>
     <color name="ink">#FF2B2B2B</color>
     <color name="sub">#FF6B6B6B</color>
     <color name="muted">#FF8C8C8C</color>
     <color name="line">#FFE4E4E1</color>
-    <color name="bg">#FFF4F5F7</color>
+    <color name="bg">#FFFFFFFF</color>
     <color name="card">#FFFFFFFF</color>
     <color name="white">#FFFFFFFF</color>
     <color name="track">#FFE4E4E1</color>

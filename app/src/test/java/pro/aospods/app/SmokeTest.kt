@@ -15,6 +15,23 @@ class SmokeTest {
         assertNotNull(c.get())
         c.pause().stop().destroy()
     }
+    @Test fun splashCreates() {
+        Robolectric.buildActivity(SplashActivity::class.java).setup().destroy()
+    }
+    @Test fun permissionScreenListsPermissionsForThisSdk() {
+        val a = Robolectric.buildActivity(PermissionActivity::class.java).setup().get()
+        val list = a.findViewById<android.widget.LinearLayout>(R.id.permList)
+        // SDK 34: 다른 앱 위에 표시 · 블루투스 · 알림 (위치는 11 이하만)
+        org.junit.Assert.assertEquals(3, list.childCount)
+    }
+    @Test fun choiceSheetShows() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        var picked = -1
+        val s = Sheets.choice(a, "청취 모드", listOf("노이즈 캔슬링", "주변음 허용"), 0) { picked = it }
+        org.junit.Assert.assertEquals(2, s.b.sheetBody.childCount)
+        s.b.sheetBody.getChildAt(1).performClick()
+        org.junit.Assert.assertEquals(1, picked)
+    }
     @Test fun notifSettingsCreates() {
         Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().destroy()
     }

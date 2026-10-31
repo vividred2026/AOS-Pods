@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- [연결] 버튼 64×60 · 모서리 10 (Figma 1215:2020) -->
+<!-- [연결] 버튼 64×40 · 모서리 8 (Figma 1215:2020) -->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#33FFFFFF">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/orange"/>
-            <corners android:radius="10dp"/>
+            <solid android:color="@color/accent"/>
+            <corners android:radius="8dp"/>
         </shape>
     </item>
 </ripple>

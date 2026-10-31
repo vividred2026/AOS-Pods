@@ -9,17 +9,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="24dp"
         android:paddingBottom="40dp">
 
-        <TextView
+        <!-- 앱 바: AOS PODS 로고 (Figma 메인 AppBar · px16 py10) -->
+        <ImageView
+            android:id="@+id/appLogo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AosPods"
-            android:textColor="@color/ink"
-            android:textSize="28sp"
-            android:textStyle="bold"/>
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="10dp"
+            android:src="@drawable/logo_bar"
+            android:contentDescription="AOS PODS"/>
 
         <!-- 권한 안내 (P-01) -->
         <LinearLayout
@@ -29,7 +29,8 @@
             android:orientation="vertical"
             android:background="@drawable/card_bg"
             android:padding="20dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
             android:visibility="gone">
             <TextView
                 android:layout_width="wrap_content"
@@ -47,7 +48,7 @@
                 android:textColor="@color/white"
                 android:textSize="15sp"
                 android:textAllCaps="false"
-                android:background="@drawable/btn_orange"
+                android:background="@drawable/btn_accent"
                 android:stateListAnimator="@null"/>
             <Button
                 android:id="@+id/btnPermLoc"
@@ -58,7 +59,7 @@
                 android:textColor="@color/white"
                 android:textSize="15sp"
                 android:textAllCaps="false"
-                android:background="@drawable/btn_orange"
+                android:background="@drawable/btn_accent"
                 android:stateListAnimator="@null"/>
             <Button
                 android:id="@+id/btnPermBt"
@@ -69,7 +70,7 @@
                 android:textColor="@color/white"
                 android:textSize="15sp"
                 android:textAllCaps="false"
-                android:background="@drawable/btn_orange"
+                android:background="@drawable/btn_accent"
                 android:stateListAnimator="@null"/>
             <Button
                 android:id="@+id/btnPermNotif"
@@ -80,7 +81,7 @@
                 android:textColor="@color/white"
                 android:textSize="15sp"
                 android:textAllCaps="false"
-                android:background="@drawable/btn_orange"
+                android:background="@drawable/btn_accent"
                 android:stateListAnimator="@null"/>
             <TextView
                 android:layout_width="wrap_content"
@@ -97,22 +98,20 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/card_bg"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="4dp"
-            android:layout_marginTop="20dp">
+            android:paddingBottom="8dp">
 
             <!-- 에어팟 연결 카드 (Figma M-00 · 1215:2013 연결 전 / 1215:1992 연결 후) -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="12dp"
+                android:paddingHorizontal="16dp"
                 android:paddingVertical="12dp">
 
                 <!-- 연결 전: 안내 + [연결] -->
                 <LinearLayout
                     android:id="@+id/pairDisconnected"
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp"
@@ -144,13 +143,13 @@
                     <TextView
                         android:id="@+id/btnPair"
                         android:layout_width="64dp"
-                        android:layout_height="60dp"
+                        android:layout_height="40dp"
                         android:background="@drawable/btn_pair"
                         android:gravity="center"
                         android:text="연결"
                         android:textColor="@color/white"
                         android:textSize="14sp"
-                        android:textStyle="bold"/>
+                        android:fontFamily="@font/pretendard_semibold"/>
                 </LinearLayout>
 
                 <!-- 연결 후: 이름 - 모델 번호 · R/L/C 배터리 (탭: 에어팟 정보 / 길게: 다시 연결) -->

@@ -14,6 +14,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import pro.aospods.app.Sheets.buttons
+import pro.aospods.app.Sheets.link
+import pro.aospods.app.Sheets.text
 import pro.aospods.app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -197,7 +200,7 @@ class MainActivity : AppCompatActivity() {
         }
         // "이름(주황) - 모델 번호(회색)" — 모델 번호는 에어팟이 알려줬을 때만
         val title = android.text.SpannableStringBuilder(u.name).apply {
-            setSpan(android.text.style.ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, R.color.orange)),
+            setSpan(android.text.style.ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, R.color.accent)),
                 0, length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
                 0, length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -224,6 +227,12 @@ class MainActivity : AppCompatActivity() {
     private fun applyNow() = ScanService.applySettings(this)
 
     private fun open(cls: Class<*>) = startActivity(Intent(this, cls))
+
+    private fun copy(label: String, text: String, done: String) {
+        val cm = getSystemService(android.content.ClipboardManager::class.java)
+        cm.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
+        toast(done)
+    }
     private fun toast(msg: String) =
         android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_LONG).show()
 
@@ -268,23 +277,21 @@ class MainActivity : AppCompatActivity() {
     // --- 다이얼로그 ---
 
     private fun showModelPicker() {
-        val models = Prefs.MODELS.toTypedArray()
-        AlertDialog.Builder(this).setTitle("모델")
-            .setSingleChoiceItems(models, models.indexOf(prefs.model)) { d, w ->
-                prefs.model = models[w]; b.modelValue.text = models[w]; d.dismiss()
-            }.setNegativeButton("닫기", null).show()
+        val models = Prefs.MODELS
+        Sheets.choice(this, "제품 선택", models, models.indexOf(prefs.model)) { w ->
+            prefs.model = models[w]; b.modelValue.text = models[w]
+        }
     }
 
     private fun nightLabel() =
         Prefs.NIGHT_LABELS[Prefs.NIGHT_VALUES.indexOf(prefs.nightMode).coerceAtLeast(0)]
 
     private fun showNightPicker() {
-        val labels = Prefs.NIGHT_LABELS.toTypedArray()
-        AlertDialog.Builder(this).setTitle("다크 모드")
-            .setSingleChoiceItems(labels, Prefs.NIGHT_VALUES.indexOf(prefs.nightMode)) { d, w ->
-                prefs.nightMode = Prefs.NIGHT_VALUES[w]; b.nightValue.text = labels[w]
-                d.dismiss(); AppCompatDelegate.setDefaultNightMode(prefs.nightMode)
-            }.setNegativeButton("닫기", null).show()
+        val labels = Prefs.NIGHT_LABELS
+        Sheets.choice(this, "다크 모드", labels, Prefs.NIGHT_VALUES.indexOf(prefs.nightMode)) { w ->
+            prefs.nightMode = Prefs.NIGHT_VALUES[w]; b.nightValue.text = labels[w]
+            AppCompatDelegate.setDefaultNightMode(prefs.nightMode)
+        }
     }
 
     // ---------- 에어팟 페어링 ----------
@@ -508,30 +515,25 @@ class MainActivity : AppCompatActivity() {
                 recent.forEach { appendLine(it) }
             }
         }
-        AlertDialog.Builder(this).setTitle("진단 정보").setMessage(text)
-            .setPositiveButton("닫기", null)
-            .setNegativeButton("AACP 실험") { _, _ -> showAapExperiment() }
-            .setNeutralButton("복사") { _, _ ->
-                val cm = getSystemService(android.content.ClipboardManager::class.java)
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods", text))
-                toast("진단 정보를 복사했습니다")
-            }.show()
+        // 진단정보 시트 (Figma 1216:5169): 오른쪽 위 [AACP 테스트] · 하단 [복사] [닫기]
+        val s = Sheets.base(this, "진단 정보").link("AACP 테스트") { showAapExperiment() }
+        s.text(text)
+        s.buttons("복사", { copy("aospods", text, "진단 정보를 복사했습니다") }, "닫기", { s.dialog.dismiss() })
+        s.dialog.show()
     }
 
     /** 청취 모드 선택 → 에어팟에 전송. 2초 안에 에어팟이 같은 모드로 확인해 주지 않으면 미지원 안내. */
     private fun showListenModePicker() {
         val modes = Aap.MODES
-        val labels = modes.map { Aap.modeName(it) }.toTypedArray()
-        AlertDialog.Builder(this).setTitle("청취 모드")
-            .setSingleChoiceItems(labels, modes.indexOf(AapSession.listenMode.value)) { d, w ->
-                d.dismiss()
-                val want = modes[w]
-                if (!AapSession.setListenMode(want)) { toast("에어팟과 연결이 끊겨 바꾸지 못했어요"); return@setSingleChoiceItems }
-                b.root.postDelayed({
-                    if (AapSession.connected.value && AapSession.listenMode.value != want)
-                        toast("에어팟이 '${labels[w]}'을(를) 확인해 주지 않았어요 — 이 모델이나 설정에서는 지원되지 않을 수 있어요")
-                }, 2000)
-            }.setNegativeButton("닫기", null).show()
+        val labels = modes.map { Aap.modeName(it) }
+        Sheets.choice(this, "청취 모드", labels, modes.indexOf(AapSession.listenMode.value)) { w ->
+            val want = modes[w]
+            if (!AapSession.setListenMode(want)) { toast("에어팟과 연결이 끊겨 바꾸지 못했어요"); return@choice }
+            b.root.postDelayed({
+                if (AapSession.connected.value && AapSession.listenMode.value != want)
+                    toast("에어팟이 '${labels[w]}'을(를) 확인해 주지 않았어요 — 이 모델이나 설정에서는 지원되지 않을 수 있어요")
+            }, 2000)
+        }
     }
 
     /** AACP 연결 상태·로그 확인. 연결돼 있지 않으면 지금 다시 시도한다(실패 원인이 로그에 남음).
@@ -545,26 +547,20 @@ class MainActivity : AppCompatActivity() {
         if (!runtimePermsOk()) { requestRuntimePerms(); return }
 
         val head = "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · ${Build.ID} · 앱 빌드 ${BuildConfig.BUILD_ID}\n"
-        val logView = android.widget.TextView(this).apply {
-            setTextIsSelectable(true); textSize = 12f
-            setPadding(48, 24, 48, 24)
-        }
-        val scroll = android.widget.ScrollView(this).apply { addView(logView) }
+        // AACP 연결 테스트 시트 (Figma 1216:5303): 실시간 로그 · [복사] [닫기]
+        val s = Sheets.base(this, "AACP 연결 테스트")
+        val logView = s.text("")
+        logView.textSize = 12f
         val job = lifecycleScope.launch {
             AapSession.log.collect {
                 logView.text = head + it
-                scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                s.b.sheetScroll.post { s.b.sheetScroll.fullScroll(View.FOCUS_DOWN) }
             }
         }
-        AlertDialog.Builder(this).setTitle("AACP 연결 (실험)").setView(scroll)
-            .setPositiveButton("닫기", null)
-            .setNeutralButton("복사") { _, _ ->
-                val cm = getSystemService(android.content.ClipboardManager::class.java)
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods-aacp", head + AapSession.log.value))
-                toast("AACP 로그를 복사했습니다")
-            }
-            .setOnDismissListener { job.cancel() }
-            .show()
+        s.buttons("복사", { copy("aospods-aacp", head + AapSession.log.value, "AACP 로그를 복사했습니다") },
+            "닫기", { s.dialog.dismiss() })
+        s.dialog.setOnDismissListener { job.cancel() }
+        s.dialog.show()
         if (!AapSession.connected.value) AapSession.start(this, adapter, dev, force = true)
     }
 

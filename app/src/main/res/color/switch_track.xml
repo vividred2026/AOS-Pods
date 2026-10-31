@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 디자인 토글: 켜짐 = 보라 트랙 + 흰 원 / 꺼짐 = 회색 트랙 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="@color/accent"/>
+    <item android:color="@color/switch_off"/>
+</selector>

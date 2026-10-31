@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S-02 접근 권한 안내 (Figma 1216:3249) -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/bg">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="18dp"
+        android:paddingTop="40dp"
+        android:paddingBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="10dp">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/logo_perm"
+                android:contentDescription="AOS PODS"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="정상적으로 동작하려면,\n아래 권한을 허용해 주세요."
+                android:textColor="@color/grey900"
+                android:textSize="22sp"
+                android:lineSpacingExtra="4dp"
+                android:fontFamily="@font/pretendard_bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/permList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="4dp"
+            android:background="@drawable/perm_card_bg"
+            android:showDividers="middle"
+            android:divider="@drawable/perm_divider"/>
+
+        <TextView
+            android:id="@+id/permPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textColor="@color/grey600"
+            android:textSize="13sp"
+            android:lineSpacingExtra="4dp"
+            android:fontFamily="@font/pretendard_medium"/>
+
+        <Space android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:minHeight="20dp"/>
+
+        <TextView
+            android:id="@+id/btnAgree"
+            style="@style/ButtonPrimary"
+            android:layout_width="match_parent"
+            android:layout_marginTop="20dp"
+            android:text="동의합니다."/>
+        <TextView
+            android:id="@+id/btnLater"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:text="나중에 설정하기"
+            android:textColor="@color/grey600"
+            android:textSize="14sp"
+            android:fontFamily="@font/pretendard_medium"
+            android:background="?attr/selectableItemBackground"/>
+    </LinearLayout>
+</ScrollView>

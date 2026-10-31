@@ -1,7 +1,6 @@
 package pro.aospods.app
 
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import pro.aospods.app.databinding.ActivityPercentBinding
 
@@ -17,11 +16,10 @@ class PercentSettingsActivity : AppCompatActivity() {
         b.swDisconnected.isChecked = prefs.showWhenDisconnected
         b.swDisconnected.setOnCheckedChangeListener { _, v -> prefs.showWhenDisconnected = v }
         b.rowType.setOnClickListener {
-            val items = Prefs.PERCENT_TYPES.toTypedArray()
-            AlertDialog.Builder(this).setTitle("표시할 퍼센트 기준")
-                .setSingleChoiceItems(items, items.indexOf(prefs.percentType)) { d, w ->
-                    prefs.percentType = items[w]; b.typeValue.text = items[w]; d.dismiss()
-                }.setNegativeButton("닫기", null).show()
+            val items = Prefs.PERCENT_TYPES
+            Sheets.choice(this, "표시할 퍼센트 기준", items, items.indexOf(prefs.percentType)) { w ->
+                prefs.percentType = items[w]; b.typeValue.text = items[w]
+            }
         }
     }
 

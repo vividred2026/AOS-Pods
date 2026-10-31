@@ -19,5 +19,5 @@
     <SeekBar android:id="@+id/seekBar"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:progressTint="@color/orange" android:thumbTint="@color/orange"/>
+        android:progressTint="@color/accent" android:thumbTint="@color/accent"/>
 </LinearLayout>
