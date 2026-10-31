@@ -302,24 +302,46 @@ class MainActivity : AppCompatActivity() {
         btUiReceiver = null
     }
 
-    /** 페어링 모드 진입 방법 안내 → 기기 선택 창. */
+    /** 페어링 모드 진입 방법 안내 시트(Figma `1230:2253`) → 기기 선택 시트. */
     private fun pairGuide() {
         if (!runtimePermsOk()) { requestRuntimePerms(); toast("먼저 블루투스 권한을 허용해 주세요"); return }
-        AlertDialog.Builder(this)
-            .setTitle("에어팟을 페어링 모드로")
-            .setMessage(
-                "1. 에어팟을 케이스에 넣고 뚜껑을 연 채 폰 옆에 두세요.\n" +
-                "2. 케이스의 설정 버튼을 상태 표시등이 흰색으로 깜빡일 때까지 길게 누르세요.\n" +
-                "   (버튼이 없는 에어팟 4는 케이스 앞면 표시등 부근을 두 번 톡톡)\n" +
-                "3. 깜빡이면 [다음]을 누르고, 목록에서 에어팟을 선택하세요.\n\n" +
-                "※ 이름을 바꾼 에어팟은 바꾼 이름으로 표시돼요. " +
-                "검색은 10초 정도 걸려요."
-            )
-            .setPositiveButton("다음") { _, _ -> startOwnDiscovery() }
-            .setNeutralButton("블루투스 설정") { _, _ -> openBtSettings() }
-            .setNegativeButton("취소", null)
-            .show()
+        val s = Sheets.base(this, "에어팟 페어링모드").link("블루투스 설정") { openBtSettings() }
+        val ctx = s.dialog.context
+        listOf(
+            "에어팟을 케이스에 넣고 뚜껑을 연 채 폰 옆에 두세요.",
+            "케이스의 설정 버튼을 상태 표시등이 흰색으로 깜빡일 때까지 길게 누르세요. " +
+                "(버튼이 없는 에어팟 4는 케이스 앞면 표시등 부근을 두 번 톡톡)",
+            "깜빡이면 [다음]을 누르고, 목록에서 에어팟을 선택하세요.",
+        ).forEachIndexed { i, line ->
+            s.b.sheetBody.addView(sheetText(ctx, bullet(line), 14f, R.color.ink).apply {
+                if (i > 0) layoutParams = marginTop(10)
+            })
+        }
+        s.b.sheetBody.addView(sheetText(ctx,
+            "이름을 변경한 에어팟은 변경된 이름으로 표기되며, 검색은 10초 정도 소요됩니다.", 14f, R.color.ink).apply {
+            setPadding(dp(20), dp(10), 0, dp(10))
+            layoutParams = marginTop(10)
+        })
+        s.buttons("취소", { s.dialog.dismiss() }, "다음", { s.dialog.dismiss(); startOwnDiscovery() })
+        s.dialog.show()
     }
+
+    private fun bullet(t: String) = android.text.SpannableString(t).apply {
+        setSpan(android.text.style.BulletSpan(dp(10)), 0, length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+
+    private fun sheetText(ctx: android.content.Context, t: CharSequence, size: Float, color: Int) =
+        android.widget.TextView(ctx).apply {
+            text = t; textSize = size
+            setTextColor(ctx.getColor(color))
+            setLineSpacing(0f, 1.2f)
+        }
+
+    private fun marginTop(v: Int) = android.widget.LinearLayout.LayoutParams(
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+    ).apply { topMargin = dp(v) }
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     // ---------- 앱 자체 기기 검색 (이름 있는 오디오 기기만, MAC 주소 비노출) ----------
 
@@ -331,8 +353,9 @@ class MainActivity : AppCompatActivity() {
 
     private val found = linkedMapOf<String, Found>()          // key = 주소(화면에는 안 보임)
     private val seenAll = mutableSetOf<String>()               // 진단: 이름 유무 상관없이 발견된 기기
-    private var pickDialog: AlertDialog? = null
-    private var pickAdapter: android.widget.ArrayAdapter<String>? = null
+    private var pickSheet: Sheets.Sheet? = null
+    private var pickHead: android.widget.TextView? = null
+    private var pickList: android.widget.LinearLayout? = null
     /** 목록에 지금 보이는 순서 그대로(누른 항목과 실제 기기가 어긋나지 않게). */
     private var shown: List<Found> = emptyList()
     private var discoveryReceiver: android.content.BroadcastReceiver? = null
@@ -370,19 +393,24 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (_: Exception) {}
 
-        val listAdapter = android.widget.ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mutableListOf())
-        pickAdapter = listAdapter
-        pickDialog = AlertDialog.Builder(this)
-            .setTitle("에어팟 찾는 중… (약 12초)")
-            .setAdapter(listAdapter) { _, which ->
-                val f = shown.getOrNull(which) ?: return@setAdapter
-                stopDiscovery(); bond(f.dev)
-            }
-            .setPositiveButton("다시 검색") { _, _ -> startOwnDiscovery() }
-            .setNeutralButton("블루투스 설정") { _, _ -> stopDiscovery(); openBtSettings() }
-            .setNegativeButton("취소") { _, _ -> stopDiscovery() }
-            .setOnCancelListener { stopDiscovery() }
-            .show()
+        // 기기 선택 시트(Figma `1230:2480`): 안내 줄 + 이름 목록(MAC 비노출) + [취소][다시 검색]
+        val sheet = Sheets.base(this, "에어팟 페어링모드").link("블루투스 설정") { stopDiscovery(); openBtSettings() }
+        val ctx = sheet.dialog.context
+        val head = sheetText(ctx, "에어팟 찾는 중… (약 12초)", 16f, R.color.ink).apply {
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(ctx, R.font.pretendard_bold)
+        }
+        val list = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        sheet.b.sheetBody.addView(head)
+        sheet.b.sheetBody.addView(list, marginTop(10))
+        sheet.b.sheetScroll.layoutParams = sheet.b.sheetScroll.layoutParams.apply {
+            height = (resources.displayMetrics.heightPixels * 0.5f).toInt()
+        }
+        sheet.buttons("취소", { sheet.dialog.dismiss() }, "다시 검색", { startOwnDiscovery() })
+        // 이 시트가 닫힐 때만 검색 중지(다시 검색으로 새 시트가 열린 뒤 옛 시트의 닫힘이 새 검색을 끊지 않게)
+        sheet.dialog.setOnDismissListener { if (pickSheet === sheet) { stopDiscovery(); pickSheet = null } }
+        pickSheet?.dialog?.dismiss()
+        pickSheet = sheet; pickHead = head; pickList = list
+        sheet.dialog.show()
         refreshPickList()
 
         val r = object : android.content.BroadcastReceiver() {
@@ -404,11 +432,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     android.bluetooth.BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
                         val named = found.values.count { !it.bonded }
-                        pickDialog?.setTitle(
+                        pickHead?.text =
                             if (found.values.none { it.cat <= 1 })
                                 "에어팟을 못 찾았어요 (발견 ${seenAll.size} · 이름 확인 $named)"
-                            else "연결할 에어팟을 선택하세요 (발견 ${seenAll.size})"
-                        )
+                            else countLine("연결할 에어팟을 선택하세요.", seenAll.size)
                     }
                 }
             }
@@ -422,23 +449,43 @@ class MainActivity : AppCompatActivity() {
         androidx.core.content.ContextCompat.registerReceiver(this, r, f, androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
         try {
             if (adapter.isDiscovering) adapter.cancelDiscovery()
-            if (!adapter.startDiscovery()) pickDialog?.setTitle("검색을 시작하지 못했어요 — 위치 서비스·권한을 확인해 주세요")
-        } catch (e: Exception) { pickDialog?.setTitle("검색 오류: ${e.message}") }
+            if (!adapter.startDiscovery()) pickHead?.text = "검색을 시작하지 못했어요 — 위치 서비스·권한을 확인해 주세요"
+        } catch (e: Exception) { pickHead?.text = "검색 오류: ${e.message}" }
     }
 
     private fun sortedFound() = found.values.sortedWith(
         compareBy<Found> { it.cat }.thenByDescending { it.bonded }.thenBy { it.name }
     )
 
+    /** "문구   +N" — 발견 수만 보라. */
+    private fun countLine(t: String, n: Int): CharSequence {
+        val tail = "+$n"
+        return android.text.SpannableString("$t   $tail").apply {
+            setSpan(android.text.style.ForegroundColorSpan(getColor(R.color.accent)),
+                length - tail.length, length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
+
     private fun refreshPickList() {
-        val a = pickAdapter ?: return
-        a.clear()
+        val list = pickList ?: return
+        val sheet = pickSheet ?: return
         shown = sortedFound()
-        a.addAll(shown.map {
-            val icon = when (it.cat) { 0 -> "🎧"; 1 -> "🔈"; else -> "·" }
-            "$icon ${it.name}" + if (it.bonded) "  (페어링됨)" else ""
-        })
-        a.notifyDataSetChanged()
+        list.removeAllViews()
+        val ctx = list.context
+        val bg = android.util.TypedValue().also {
+            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, it, true)
+        }.resourceId
+        shown.forEach { f ->
+            val icon = when (f.cat) { 0 -> "🎧"; 1 -> "🔈"; else -> "·" }
+            val row = sheetText(ctx, "$icon ${f.name}" + if (f.bonded) "  (페어링됨)" else "", 16f, R.color.ink).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minHeight = dp(48)
+                setPadding(dp(24), dp(12), dp(4), dp(12))
+                setBackgroundResource(bg)
+                setOnClickListener { sheet.dialog.dismiss(); stopDiscovery(); bond(f.dev) }
+            }
+            list.addView(row, marginTop(if (list.childCount == 0) 0 else 10))
+        }
     }
 
     @android.annotation.SuppressLint("MissingPermission")

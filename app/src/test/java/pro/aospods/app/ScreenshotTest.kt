@@ -61,5 +61,14 @@ class ScreenshotTest {
         save(s.dialog.window!!.decorView, "sheet_listen")
     }
 
+    @Test fun pairGuideSheet() {
+        val app = org.robolectric.RuntimeEnvironment.getApplication()
+        shadowOf(app).grantPermissions(*Perms.required())
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        MainActivity::class.java.getDeclaredMethod("pairGuide").apply { isAccessible = true }.invoke(a)
+        shadowOf(Looper.getMainLooper()).idle()
+        save(org.robolectric.shadows.ShadowDialog.getLatestDialog().window!!.decorView, "d01_pair_guide")
+    }
+
     @Test fun notifSettings() = shot(Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().get(), "n01_notif")
 }
