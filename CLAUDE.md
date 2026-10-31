@@ -187,6 +187,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 - 소스 zip에는 `local.properties`를 뺐습니다. Android Studio로 열면 SDK 경로가 자동으로 잡힙니다.
 - AGP 8.5.2 · Kotlin Android 플러그인 · JDK 17
 - 실기기 설치: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+- 디버그 APK는 리포의 고정 키 `app/debug.keystore`(비밀번호 android, 공개용 디버그 키)로 서명 → CI 빌드끼리 **덮어 설치 가능**. 이 키로 바꾸기 전 빌드는 한 번 삭제 후 설치 필요.
 
 ### 실기기 확인 팁
 - 앱 아래쪽 **[진단 정보]** → 연결 기기, HFP 배터리, BLE/애플/07 수신 수, 마지막 0x07 원문과 글자별 해석값 → [복사]
