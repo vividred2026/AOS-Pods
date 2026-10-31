@@ -53,6 +53,7 @@ jobs:
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk AosPods-debug.apk
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest AosPods-debug.apk --prerelease \
+          (cd app/build/screens 2>/dev/null && zip -q ../../../screens.zip *.png) || true
+          gh release create latest AosPods-debug.apk $( [ -f screens.zip ] && echo screens.zip ) --prerelease \
             --title "최신 디버그 빌드 (${GITHUB_SHA::7})" \
             --notes "main 브랜치 최신 커밋 ${GITHUB_SHA::7}의 디버그 서명 APK입니다. 폰에서 내려받아 설치하세요."
