@@ -75,7 +75,9 @@
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:background">?attr/selectableItemBackground</item>
+        <!-- 탭 영역은 위아래로 6dp 넓히되 행 높이는 그대로(음수 여백으로 상쇄) -->
         <item name="android:paddingVertical">6dp</item>
+        <item name="android:layout_marginVertical">-6dp</item>
     </style>
     <style name="AppBarTitle">
         <item name="android:layout_width">0dp</item>
