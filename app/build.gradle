@@ -11,8 +11,10 @@ android {
     targetSdk 34
     versionCode 1
     versionName "1.0"
+    // 화면 맨 아래·진단 정보에 표시할 빌드 번호(CI는 커밋 앞 7자리) — 어떤 APK가 설치됐는지 확인용
+    buildConfigField "String", "BUILD_ID", "\"${(System.getenv('GITHUB_SHA') ?: 'local').take(7)}\""
   }
-  buildFeatures { viewBinding true }
+  buildFeatures { viewBinding true; buildConfig true }
   // 숨김 API 우회 라이브러리 사용 정보는 APK에 넣지 않음(라이브러리 권장 설정)
   dependenciesInfo { includeInApk = false; includeInBundle = false }
   testOptions { unitTests { includeAndroidResources = true } }

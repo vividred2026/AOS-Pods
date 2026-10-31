@@ -26,12 +26,18 @@ class InfoActivity : AppCompatActivity() {
         b.rowName.setOnClickListener { showRename() }
 
         lifecycleScope.launch {
-            combine(AapSession.connected, AapSession.info, AapSession.pendingName) { c, i, p -> Triple(c, i, p) }
-                .collect { (connected, info, pending) ->
+            combine(AapSession.connected, AapSession.info, AapSession.pendingName, AapSession.infoFresh) { c, i, p, f ->
+                arrayOf<Any?>(c, i, p, f)
+            }.collect { arr ->
+                    val connected = arr[0] as Boolean
+                    val info = arr[1] as Aap.Msg.Info?
+                    val pending = arr[2] as String?
+                    val fresh = arr[3] as Boolean
                     b.infoStatus.text = when {
-                        !connected -> "에어팟 전용 채널이 연결돼 있지 않아요. 에어팟을 연결하면 표시돼요."
-                        info == null -> "에어팟 정보를 받는 중…"
-                        else -> "에어팟이 직접 알려준 정보예요."
+                        info == null && !connected -> "에어팟 전용 채널이 연결돼 있지 않아요. 에어팟을 연결하면 표시돼요."
+                        info == null -> "에어팟은 연결 직후에만 정보를 보내요. 에어팟을 케이스에 넣었다 빼서 다시 연결해 주세요."
+                        fresh -> "에어팟이 이번 연결에서 알려준 정보예요."
+                        else -> "마지막으로 받은 정보예요. (에어팟은 연결 직후에만 정보를 보내요)"
                     }
                     b.rowName.isEnabled = connected
                     val name = info?.name?.ifBlank { null }

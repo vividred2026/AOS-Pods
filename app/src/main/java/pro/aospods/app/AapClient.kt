@@ -53,7 +53,10 @@ class AapClient(
             }
             onConnected()
             log("③ 전송 완료 — 에어팟 응답 대기 (한쪽을 뺐다 끼워 보세요)")
-            val buf = ByteArray(1024)
+            // 정보(0x1D)·0x17 등은 수백 바이트~1KB를 넘을 수 있어 넉넉히(잘리면 해석 불가)
+            val buf = ByteArray(8192)
+            // 해석하지 않는 메시지는 같은 내용이면 한 번만 기록(0x0E·0x55처럼 몇 초마다 반복되는 것이 로그를 덮지 않게)
+            val seenRaw = HashSet<Int>()
             val input = s.inputStream
             var count = 0
             while (!closed) {
@@ -64,15 +67,20 @@ class AapClient(
                 val p = buf.copyOf(n)
                 val op = Aap.opcode(p)
                 val msg = Aap.parse(p)
+                val parsed = msg != null && msg !is Aap.Msg.Other
                 if (op != null && op in Aap.PRIVATE_OPS) {
                     // 주소·일련번호가 들어 있는 메시지: 원문은 남기지 않고 해석 결과만
-                    log("← " + if (msg != null && msg !is Aap.Msg.Other) Aap.describe(msg)
-                        else "메시지 0x%02X (주소·일련번호 포함이라 원문 생략)".format(op))
+                    when {
+                        parsed -> log("← " + Aap.describe(msg!!))
+                        op == Aap.OP_INFO -> log("← 기기 정보 수신했지만 해석 실패 (${n}B)")
+                        seenRaw.add(p.contentHashCode()) ->
+                            log("← 메시지 0x%02X (주소·일련번호 포함이라 원문 생략 · 이후 같은 내용은 생략)".format(op))
+                    }
                     if (msg != null) onMessage(msg)
                 } else if (msg != null && msg !is Aap.Msg.Other) {
                     log("← ${Aap.describe(msg)}\n   ${hex(p)}")
                     onMessage(msg)
-                } else {
+                } else if (seenRaw.add(p.contentHashCode())) {
                     log("← ${hex(p.copyOf(minOf(n, 48)))}" + if (n > 48) " …(${n}B)" else "")
                 }
             }

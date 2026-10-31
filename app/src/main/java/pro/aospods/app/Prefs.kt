@@ -77,6 +77,18 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("hide_popup_inear", false)
         set(v) = sp.edit { putBoolean("hide_popup_inear", v) }
 
+    /** 에어팟이 마지막으로 보낸 기기 정보(AACP 0x1D). 에어팟은 연결 직후에만 보내고 요청할 수 없어서 저장해 둔다.
+     *  키는 기기 주소(화면에는 표시하지 않음). 값은 필드를 \u001F로 이은 문자열. */
+    fun aapInfo(deviceKey: String): Aap.Msg.Info? {
+        val f = (sp.getString("aap_info_$deviceKey", null) ?: return null).split('\u001F')
+        if (f.size < 7) return null
+        return Aap.Msg.Info(f[0], f[1], f[2], f[3], f[4], f[5], f[6])
+    }
+    fun saveAapInfo(deviceKey: String, i: Aap.Msg.Info) = sp.edit {
+        putString("aap_info_$deviceKey", listOf(i.name, i.modelNumber, i.manufacturer, i.serial,
+            i.firmware, i.leftSerial, i.rightSerial).joinToString("\u001F"))
+    }
+
     companion object {
         val MODELS = listOf("에어팟 1·2", "에어팟 프로", "파워비츠 프로", "에어팟 3", "에어팟 4")
         val PERCENT_TYPES = listOf("가장 닳은 기기 (케이스 포함)", "왼쪽", "오른쪽", "케이스")

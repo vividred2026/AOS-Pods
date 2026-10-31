@@ -1,6 +1,8 @@
 package pro.aospods.app
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.content.Context
 import android.bluetooth.BluetoothDevice
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -13,6 +15,8 @@ object AapSession {
     val listenMode = MutableStateFlow<Int?>(null)
     /** 에어팟이 알려준 기기 정보(이름·모델·펌웨어·일련번호). null = 아직 없음. */
     val info = MutableStateFlow<Aap.Msg.Info?>(null)
+    /** true = 이번 연결에서 에어팟이 보낸 정보 / false = 예전에 저장해 둔 정보. */
+    val infoFresh = MutableStateFlow(false)
     /** 이름 변경을 요청했지만 에어팟이 아직 새 정보로 확인해 주지 않은 이름. */
     val pendingName = MutableStateFlow<String?>(null)
     /** 진단·실험 화면용 로그(최근 80줄). */
@@ -28,16 +32,22 @@ object AapSession {
 
     /** 이 기기와 연결 시도. 이미 연결(시도) 중이거나, 이번 연결에서 이미 실패했다면 force 없이는 무시. */
     @Synchronized
-    fun start(adapter: BluetoothAdapter, dev: BluetoothDevice, force: Boolean = false) {
+    @SuppressLint("MissingPermission")
+    fun start(ctx: Context, adapter: BluetoothAdapter, dev: BluetoothDevice, force: Boolean = false) {
         if (!force && (dev == failedFor || (client != null && dev == device))) return
         stopLocked()
         device = dev; failedFor = null
+        val prefs = Prefs(ctx.applicationContext)
+        val key = try { dev.address } catch (_: Exception) { "" }
+        // 에어팟은 정보(0x1D)를 연결 직후에만 보내므로, 저장해 둔 값을 먼저 보여 준다
+        if (info.value == null) { info.value = prefs.aapInfo(key); infoFresh.value = false }
         append("— AACP 연결 시도 —")
         val c = AapClient(adapter, dev, ::append, onConnected = { connected.value = true }) { m ->
             when (m) {
                 is Aap.Msg.ListenMode -> listenMode.value = m.mode
                 is Aap.Msg.Info -> {
-                    info.value = m
+                    info.value = m; infoFresh.value = true
+                    try { prefs.saveAapInfo(key, m) } catch (_: Exception) {}
                     if (m.name.isNotBlank()) {
                         if (m.name == pendingName.value) pendingName.value = null
                         BtState.connectedName.value = m.name   // 에어팟이 알려준 실제 이름으로 표시
@@ -55,7 +65,7 @@ object AapSession {
                     if (client === c) {
                         client = null
                         if (!c.everConnected) failedFor = dev
-                        connected.value = false; listenMode.value = null; info.value = null
+                        connected.value = false; listenMode.value = null
                     }
                 }
             }
@@ -68,7 +78,7 @@ object AapSession {
 
     private fun stopLocked() {
         client?.close(); client = null; device = null
-        connected.value = false; listenMode.value = null; info.value = null; pendingName.value = null
+        connected.value = false; listenMode.value = null; info.value = null; infoFresh.value = false; pendingName.value = null
     }
 
     /** 청취 모드 변경 요청. 전송 실패 시 false. 실제 반영은 에어팟이 보내는 확인(listenMode)으로 판단. */
@@ -84,6 +94,6 @@ object AapSession {
 
     private fun append(s: String) {
         val lines = (log.value + s + "\n").lines()
-        log.value = lines.takeLast(80).joinToString("\n")
+        log.value = lines.takeLast(200).joinToString("\n")
     }
 }

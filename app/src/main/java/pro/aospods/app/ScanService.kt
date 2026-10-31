@@ -412,7 +412,7 @@ class ScanService : Service() {
         if (dev == null || adapter == null || !adapter.isEnabled || !Perms.ok(this)) {
             AapSession.onEar = null; AapSession.onBattery = null
         AapSession.stop(); aapPods = null; aapWorn = null
-        } else AapSession.start(adapter, dev)
+        } else AapSession.start(this, adapter, dev)
     }
 
     @SuppressLint("MissingPermission")
