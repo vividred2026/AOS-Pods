@@ -96,7 +96,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 - 로고·아이콘은 Figma 노드를 `exportAsync(SVG)`로 받아 VectorDrawable로 변환(`logo_bar` 메인 앱바 · `logo_perm` S-02 · `logo_splash`/`logo_befree` S-01 · `ic_check_box_*` · `ic_check_circle_*` · `ic_close`). figma.com 에셋 URL은 이 환경에서 막혀 있음
 - **S-01 스플래시**(`SplashActivity`, 런처, 1.2초) → 처음이면 **S-02 접근 권한 안내**(`PermissionActivity`: 체크=허용됨, 줄 탭=그 권한만 요청, [동의합니다]=전부 요청 → 다른 앱 위에 표시 → 메인, [나중에 설정하기]) → 메인. 위치(11 이하)는 먼저 **위치 권한 이유 시트**
 - **하단 시트**(`Sheets.kt`, Figma bottomsheetHeader): 청취 모드 · 제품 선택(모델) · 다크 모드 · 퍼센트 기준 = 체크 목록 / 진단 정보 = 본문 + [AACP 테스트] 링크 + [복사][닫기] / AACP 연결 테스트 = 실시간 로그 + [복사][닫기]. 이름 변경·페어링 안내·기기 목록은 기존 다이얼로그(보라 강조)
-- **글자 크기(Figma `1216:3535` 기준)**: 행 제목 15 Medium(행간 20, 자간 -0.2) · 요약 13 Regular(행간 18) · 카테고리 14 Bold · 연결 카드 제목 16 Bold(행간 24) · 상태 13 · 이름-모델 14 Bold · R/L/C % 16 Bold · 칩 글자 18 Black · 앱바 로고 101×46. 디자인은 메인 목록에 Spoqa Han Sans Neo를 쓰지만 앱은 Pretendard로 통일(크기·굵기·행간·자간만 맞춤)
+- **글자 크기(Figma `1216:3535` 기준)**: 행 제목 15 Medium(행간 20, 자간 -0.2) · 요약 13 Regular(행간 18) · 카테고리 14 Bold · 연결 카드 제목 16 Bold(행간 24) · 상태 13 · 이름-모델 14 Bold · R/L/C % 16 Bold · 칩 글자 18 Black · 앱바 로고 101×46(Figma `1216:3704`: 새 로고 배치 — AOS·이어버드·ODS, 위 16 · 왼쪽 16 · 아래 0). 디자인은 메인 목록에 Spoqa Han Sans Neo를 쓰지만 앱은 Pretendard로 통일(크기·굵기·행간·자간만 맞춤)
 - **로고 색**: `@color/logo` — 라이트 = 보라 `#5D22BB`, 다크 = 흰색 (`logo_bar`·`logo_perm`). 스플래시 로고는 항상 흰색
 - 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8, 토글 44×26 알약(흰 원 · 보라/회색 트랙). 권한이 빠지면 회색 카드 1장([허용] → S-02). 디자인의 "에이팟 연결"은 오타로 보고 "에어팟 연결" 유지
 - **화면 캡처 확인**: `ScreenshotTest`(Robolectric NATIVE 렌더링)가 S-01·S-02·메인·시트·N-01을 `app/build/screens`에 PNG로 만들고 CI가 릴리스에 `screens.zip`으로 첨부 → `https://github.com/vividred2026/AOS-Pods/releases/download/latest/screens.zip`로 받아 Figma와 비교
