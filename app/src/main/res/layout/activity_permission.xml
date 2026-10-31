@@ -72,8 +72,8 @@
             android:gravity="center"
             android:text="나중에 설정하기"
             android:textColor="@color/grey600"
-            android:textSize="14sp"
-            android:fontFamily="@font/pretendard_medium"
+            android:textSize="13sp"
+            android:fontFamily="@font/pretendard_bold"
             android:background="?attr/selectableItemBackground"/>
     </LinearLayout>
 </ScrollView>

@@ -23,6 +23,7 @@
         android:layout_marginStart="6dp"
         android:text="--"
         android:textColor="@color/ink"
-        android:textSize="14sp"
-        android:fontFamily="@font/pretendard_semibold"/>
+        android:textSize="16sp"
+        android:fontFamily="@font/pretendard_bold"
+        android:letterSpacing="-0.019"/>
 </LinearLayout>

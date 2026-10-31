@@ -45,6 +45,16 @@ class ScreenshotTest {
         BtState.connectedName.value = null; PodsRepo.update(null)
     }
 
+    @Test @Config(qualifiers = "+night") fun mainConnectedDark() {
+        BtState.connectedName.value = "AirPods 4"
+        PodsRepo.update(Pods("에어팟 4", 85, 85, 55, false, false, true, false, false))
+        shot(Robolectric.buildActivity(MainActivity::class.java).setup().get(), "m00_connected_dark")
+        BtState.connectedName.value = null; PodsRepo.update(null)
+    }
+
+    @Test @Config(qualifiers = "+night") fun permissionDark() =
+        shot(Robolectric.buildActivity(PermissionActivity::class.java).setup().get(), "s02_permission_dark")
+
     @Test fun listenSheet() {
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val s = Sheets.choice(a, "청취 모드", listOf("노이즈 캔슬링", "주변음 허용", "적응형", "끔"), 0) {}

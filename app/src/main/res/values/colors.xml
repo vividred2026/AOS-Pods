@@ -2,6 +2,8 @@
 <resources>
     <!-- 브랜드 보라 (Figma S-01·S-02·메인 #5D22BB) -->
     <color name="accent">#FF5D22BB</color>
+    <!-- 로고(앱바 · S-02): 라이트 = 보라 / 다크 = 흰색 -->
+    <color name="logo">#FF5D22BB</color>
     <color name="accent_bg">#FFF0E9FA</color>
     <color name="splash_start">#FF9435C0</color>
     <color name="splash_end">#FF5D22BB</color>

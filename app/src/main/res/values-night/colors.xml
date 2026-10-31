@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="accent">#FFA27BEF</color>
+    <color name="logo">#FFFFFFFF</color>
     <color name="accent_bg">#FF2A2140</color>
     <color name="splash_start">#FF9435C0</color>
     <color name="splash_end">#FF5D22BB</color>

@@ -19,15 +19,21 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textColor">@color/ink</item>
-        <item name="android:textSize">14sp</item>
+        <!-- Figma 1216:3535: 15 Medium · 행간 20 · 자간 -0.2 -->
+        <item name="android:textSize">15sp</item>
         <item name="android:fontFamily">@font/pretendard_medium</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:letterSpacing">-0.013</item>
     </style>
     <style name="RowSub">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginTop">2dp</item>
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">12sp</item>
+        <!-- 13 Regular · 행간 18 · 자간 -0.2 -->
+        <item name="android:textSize">13sp</item>
+        <item name="lineHeight">18sp</item>
+        <item name="android:letterSpacing">-0.015</item>
     </style>
     <style name="RowSwitch">
         <item name="android:layout_width">wrap_content</item>
@@ -55,10 +61,13 @@
         <item name="android:paddingHorizontal">16dp</item>
         <item name="android:paddingTop">16dp</item>
         <item name="android:paddingBottom">6dp</item>
+        <!-- 14 Bold · 행간 20 · 자간 -0.2 -->
+        <item name="lineHeight">20sp</item>
+        <item name="android:letterSpacing">-0.014</item>
         <item name="android:text">카테고리</item>
         <item name="android:textColor">@color/accent</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:fontFamily">@font/pretendard_semibold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/pretendard_bold</item>
     </style>
     <style name="RowTextTap" parent="RowText">
         <item name="android:clickable">true</item>
