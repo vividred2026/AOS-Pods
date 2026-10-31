@@ -23,6 +23,7 @@ class ModelDetectTest {
         assertEquals("에어팟 프로", ModelDetect.fromModelNumber("A3048"))
         assertEquals("에어팟 프로", ModelDetect.fromModelNumber(" a2084 "))
         assertEquals("에어팟 4", ModelDetect.fromModelNumber("A3053"))
+        assertEquals("에어팟 프로", ModelDetect.fromModelNumber("A3055"))   // 실기기(에어팟 프로 3)
         assertEquals("에어팟 1·2", ModelDetect.fromModelNumber("A2032"))
         assertNull(ModelDetect.fromModelNumber("A2096"))   // 에어팟 맥스
         assertNull(ModelDetect.fromModelNumber(""))

@@ -29,10 +29,11 @@ object ModelDetect {
         "A1523" to AP12, "A1722" to AP12, "A1602" to AP12,            // AirPods 1
         "A2031" to AP12, "A2032" to AP12, "A1938" to AP12,            // AirPods 2
         "A2564" to AP3, "A2565" to AP3, "A2566" to AP3, "A2897" to AP3,
-        "A3053" to AP4, "A3050" to AP4, "A3056" to AP4, "A3054" to AP4, "A3058" to AP4,
+        "A3053" to AP4, "A3050" to AP4,
         "A2083" to PRO, "A2084" to PRO, "A2190" to PRO,               // Pro 1
         "A2698" to PRO, "A2699" to PRO, "A2700" to PRO,               // Pro 2
         "A3047" to PRO, "A3048" to PRO, "A2968" to PRO,               // Pro 2 (USB-C)
+        "A3055" to PRO, "A3056" to PRO, "A3057" to PRO,               // Pro 3 (실기기 확인: A3055 · 펌웨어 90.x)
         "A2047" to PBP, "A2048" to PBP, "A2078" to PBP,
     )
 
