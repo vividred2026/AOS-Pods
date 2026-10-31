@@ -67,3 +67,12 @@ class WornCountTest {
         org.junit.Assert.assertEquals(2, p.copy(rightInEar = true).wornCount)
     }
 }
+
+class ProximityLengthTest {
+    @org.junit.Test fun length0x11IsNotBattery() {
+        // 실기기(삼성 SM-S937N) 진단에서 받은 길이 0x11 메시지 — 내용이 매번 달라 배터리 형식이 아님
+        val raw = "0711060A03D32E3CB82514D94334812C832EA9".chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        org.junit.Assert.assertNull(AirPodsParser.parse(raw, "에어팟 4"))
+        org.junit.Assert.assertNull(ModelDetect.fromProximity(raw))
+    }
+}

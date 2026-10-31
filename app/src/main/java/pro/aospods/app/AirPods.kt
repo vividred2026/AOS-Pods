@@ -49,6 +49,9 @@ object AirPodsParser {
         val data = findProximity(raw) ?: return null
         if (data.size < 16) return null
         if (data[0].toInt() and 0xFF != 0x07) return null // 타입 0x07 (Proximity Pairing)
+        // 길이 0x19(25)인 메시지만 배터리 형식. 실기기에서 길이 0x11(17)에 내용이 매번 바뀌는
+        // 0x07 메시지(암호화된 것으로 보임)가 잡혀 엉뚱한 배터리로 읽힌 적 있음 → "0719"만 해석
+        if (data[1].toInt() and 0xFF != 0x19) return null
 
         val s = data.joinToString("") { "%02X".format(it) } // 16진수 문자열
 

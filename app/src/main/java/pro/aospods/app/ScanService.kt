@@ -65,6 +65,8 @@ class ScanService : Service() {
     private var cApple = 0
     private var cPods = 0
     private var c07 = 0
+    private var c0719 = 0
+    private var c07Other = 0
     private var last07Hex = ""
     private val typeCounts = sortedMapOf<Int, Int>()
     private var connectedSince = 0L
@@ -87,7 +89,7 @@ class ScanService : Service() {
             val scanState = if (!scanning) "스캔 쉬는 중(에어팟 미연결)" else
                 (if (scanAllMode) "전체 스캔" else "애플 필터") + "·" + scanModeName(scanMode)
             PodsRepo.diagLine = "진단($scanState): " +
-                "BLE $cTotal · 애플 $cApple · 07 $c07 · 반영 $cPods" +
+                "BLE $cTotal · 애플 $cApple · 07 $c07(배터리형 0719 $c0719 · 기타 $c07Other) · 반영 $cPods" +
                 "\n유형: $types" +
                 (if (last07Hex.isNotEmpty()) "\n07: ${last07Hex.take(20)}…" else "")
 
@@ -115,6 +117,8 @@ class ScanService : Service() {
                 cApple++
                 AirPodsParser.messageTypes(data).forEach { typeCounts[it] = (typeCounts[it] ?: 0) + 1 }
                 AirPodsParser.findProximity(data)?.let { p ->
+                    val len = p.getOrNull(1)?.toInt()?.and(0xFF) ?: -1
+                    if (len == 0x19) c0719++ else c07Other++
                     c07++; last07Hex = p.joinToString("") { "%02X".format(it) }
                     PodsRepo.lastRawHex = last07Hex
                     PodsRepo.lastRawAt = System.currentTimeMillis()

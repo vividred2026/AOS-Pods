@@ -38,7 +38,7 @@ object ModelDetect {
 
     /** 0x07 메시지(타입 바이트부터)에서 모델 이름. */
     fun fromProximity(msg: ByteArray): String? {
-        if (msg.size < 5 || (msg[0].toInt() and 0xFF) != 0x07) return null
+        if (msg.size < 5 || (msg[0].toInt() and 0xFF) != 0x07 || (msg[1].toInt() and 0xFF) != 0x19) return null
         val id = "%02X%02X".format(msg[3], msg[4])
         return BLE_IDS[id]
     }
