@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R · L · C 글자 칩 28×28 · 모서리 8 (Figma 1215:2000) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/orange"/>
+    <corners android:radius="8dp"/>
+</shape>

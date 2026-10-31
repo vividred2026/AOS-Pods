@@ -11,4 +11,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="track">#FF2B2E34</color>
     <color name="green">#FF3FBF7F</color>
+    <color name="pair_card">#FF2A2D33</color>
 </resources>

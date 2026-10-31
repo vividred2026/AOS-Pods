@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import pro.aospods.app.databinding.ActivityMainBinding
@@ -91,32 +92,30 @@ class MainActivity : AppCompatActivity() {
         b.rowPrivacy.setOnClickListener { showPrivacy() }
         b.rowDiag.setOnClickListener { showDiag() }
 
-        // 에어팟 연결(페어링)
+        // 에어팟 연결 카드 (Figma M-00): 연결 전 = 안내 + [연결] / 연결 후 = 이름 - 모델 번호 · R/L/C 배터리
         b.btnPair.setOnClickListener { pairGuide() }
-        b.rowPair.setOnClickListener { pairGuide() }
+        b.pairDisconnected.setOnClickListener { pairGuide() }
+        // 연결 후: 탭 = 에어팟 정보(전용 채널 연결 시), 아니면 다시 연결 / 길게 = 다시 연결
+        b.pairConnected.setOnClickListener {
+            if (AapSession.connected.value) open(InfoActivity::class.java) else pairGuide()
+        }
+        b.pairConnected.setOnLongClickListener { pairGuide(); true }
+        b.podR.podLetter.text = "R"; b.podL.podLetter.text = "L"; b.podC.podLetter.text = "C"
         lifecycleScope.launch {
-            kotlinx.coroutines.flow.combine(BtState.connectedName, BtState.hfpBattery, PodsRepo.pods) { n, h, p -> Triple(n, h, p) }
-                .collect { (n, h, p) ->
-                    b.pairStatus.text = when {
-                        n == null -> "연결 안 됨 — 눌러서 에어팟과 페어링"
-                        p != null && p.hasAny -> "연결됨 · $n · 왼 ${pct(p.left)} 오 ${pct(p.right)} 케이스 ${pct(p.case)}"
-                        h != null -> "연결됨 · $n · 배터리 $h%"
-                        else -> "연결됨 · $n · 배터리 확인 중 (케이스 뚜껑을 열면 왼·오·케이스 표시)"
-                    }
-                    b.btnPair.text = if (n == null) "연결하기" else "다시 연결"
-                }
+            kotlinx.coroutines.flow.combine(
+                BtState.connectedName, BtState.hfpBattery, PodsRepo.pods, AapSession.info
+            ) { n, h, p, i -> PairUi(n, h, p, i?.modelNumber) }
+                .collect { renderPairCard(it) }
         }
         // 청취 모드: AACP 연결에 성공했을 때만 메뉴 표시
         lifecycleScope.launch {
             kotlinx.coroutines.flow.combine(AapSession.connected, AapSession.listenMode) { c, m -> c to m }
                 .collect { (c, m) ->
                     b.listenSection.visibility = if (c) View.VISIBLE else View.GONE
-                    b.rowInfo.visibility = if (c) View.VISIBLE else View.GONE
                     b.listenValue.text = Aap.modeName(m)
                 }
         }
         b.rowListen.setOnClickListener { showListenModePicker() }
-        b.rowInfo.setOnClickListener { open(InfoActivity::class.java) }
 
         // 착용 감지: 연결 중인데 에어팟이 착용 신호(0x07)를 보내지 않으면 솔직하게 안내
         lifecycleScope.launch {
@@ -184,6 +183,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pct(v: Int) = if (v > 0) "$v%" else "--"
+
+    private data class PairUi(val name: String?, val hfp: Int?, val pods: Pods?, val modelNumber: String?)
+
+    private fun renderPairCard(u: PairUi) {
+        val connected = u.name != null
+        b.pairDisconnected.visibility = if (connected) View.GONE else View.VISIBLE
+        b.pairConnected.visibility = if (connected) View.VISIBLE else View.GONE
+        if (!connected) {
+            b.pairStatus.text = "연결 안 됨 | 버튼을 눌러 에어팟과 페어링"
+            return
+        }
+        // "이름(주황) - 모델 번호(회색)" — 모델 번호는 에어팟이 알려줬을 때만
+        val title = android.text.SpannableStringBuilder(u.name).apply {
+            setSpan(android.text.style.ForegroundColorSpan(ContextCompat.getColor(this@MainActivity, R.color.orange)),
+                0, length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                0, length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (!u.modelNumber.isNullOrBlank()) append(" - ${u.modelNumber}")
+        }
+        b.pairName.text = title
+        val p = u.pods
+        if (p != null && p.hasAny) {
+            b.podsRow.visibility = View.VISIBLE
+            b.podR.podPct.text = pct(p.right) + if (p.rightCharging) "⚡" else ""
+            b.podL.podPct.text = pct(p.left) + if (p.leftCharging) "⚡" else ""
+            b.podC.podPct.text = pct(p.case) + if (p.caseCharging) "⚡" else ""
+            b.pairDetail.visibility = View.GONE
+        } else {
+            // 좌·우·케이스 값이 아직 없으면 칩 대신 안내(가짜 값 표시 안 함)
+            b.podsRow.visibility = View.GONE
+            b.pairDetail.visibility = View.VISIBLE
+            b.pairDetail.text = if (u.hfp != null) "전체 배터리 ${u.hfp}% · 케이스 뚜껑을 열면 R·L·C 표시"
+                else "배터리 확인 중 · 케이스 뚜껑을 열면 R·L·C 표시"
+        }
+    }
 
     /** 설정 변경을 다음 신호를 기다리지 않고 알림·팝업에 즉시 반영. */
     private fun applyNow() = ScanService.applySettings(this)

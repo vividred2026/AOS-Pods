@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 연결 카드의 배터리 한 칸: 글자 칩 + 퍼센트 (Figma 1215:1999) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="horizontal"
+    android:gravity="center">
+    <TextView
+        android:id="@+id/podLetter"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:background="@drawable/pod_letter_bg"
+        android:gravity="center"
+        android:text="L"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"/>
+    <TextView
+        android:id="@+id/podPct"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:text="--"
+        android:textColor="@color/ink"
+        android:textSize="14sp"
+        android:textStyle="bold"/>
+</LinearLayout>

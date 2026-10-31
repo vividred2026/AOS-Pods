@@ -12,4 +12,5 @@
     <color name="track">#FFE4E4E1</color>
     <color name="green">#FF30A46C</color>
     <color name="chip_bg">#FF6E6E73</color>
+    <color name="pair_card">#FFEAEAEA</color>
 </resources>
