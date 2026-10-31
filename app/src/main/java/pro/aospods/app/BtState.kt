@@ -3,6 +3,7 @@ package pro.aospods.app
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
@@ -42,7 +43,7 @@ object BtState {
     fun refresh(ctx: Context) {
         if (!hasConnectPerm(ctx)) return
         val adapter = ctx.getSystemService(BluetoothManager::class.java)?.adapter ?: return
-        if (!adapter.isEnabled) { connectedName.value = null; return }
+        if (!adapter.isEnabled) { connectedName.value = null; hfpBattery.value = null; return }
         try {
             adapter.getProfileProxy(ctx.applicationContext, object : BluetoothProfile.ServiceListener {
                 override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
@@ -56,18 +57,29 @@ object BtState {
         } catch (_: Exception) {}
     }
 
+    /** 기기 이름. MAC 주소는 절대 화면에 노출하지 않음 — 이름이 없으면 일반 명칭. */
     @SuppressLint("MissingPermission")
     fun safeName(ctx: Context, d: BluetoothDevice): String =
-        try { if (hasConnectPerm(ctx)) d.name ?: d.address else "에어팟" } catch (_: Exception) { "에어팟" }
+        try { if (hasConnectPerm(ctx)) d.name?.takeIf { it.isNotBlank() } ?: "에어팟" else "에어팟" }
+        catch (_: Exception) { "에어팟" }
 
-    /** 연결/해제 방송을 받아 즉시 상태를 갱신하는 리시버. */
-    fun receiver(onChange: () -> Unit) = object : BroadcastReceiver() {
+    /** 연결/해제·블루투스 ON/OFF 방송을 받아 즉시 상태를 갱신하는 리시버.
+     *  onChange(action, adapterState): adapterState는 ACTION_STATE_CHANGED일 때만 의미 있음. */
+    fun receiver(onChange: (action: String?, adapterState: Int) -> Unit) = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
-            if (i.action == ACTION_BATTERY) {
-                val v = i.getIntExtra(EXTRA_BATTERY, -1)
-                hfpBattery.value = v.takeIf { it in 0..100 }
-            } else refresh(c)
-            onChange()
+            when (i.action) {
+                ACTION_BATTERY -> {
+                    val v = i.getIntExtra(EXTRA_BATTERY, -1)
+                    hfpBattery.value = v.takeIf { it in 0..100 }
+                }
+                BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                    if (i.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) != BluetoothAdapter.STATE_ON) {
+                        connectedName.value = null; hfpBattery.value = null
+                    } else refresh(c)
+                }
+                else -> refresh(c)
+            }
+            onChange(i.action, i.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1))
         }
     }
 
@@ -77,5 +89,6 @@ object BtState {
         addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
         addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         addAction(ACTION_BATTERY)
+        addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
     }
 }

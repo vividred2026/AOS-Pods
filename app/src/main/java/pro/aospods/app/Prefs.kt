@@ -77,6 +77,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("hide_popup_inear", false)
         set(v) = sp.edit { putBoolean("hide_popup_inear", v) }
 
+    /** 진단용: true면 필터 없이 전체 BLE 스캔(화면이 꺼지면 스캔이 멈출 수 있음). 기본은 애플 제조사 필터. */
+    var scanAll: Boolean
+        get() = sp.getBoolean("scan_all", false)
+        set(v) = sp.edit { putBoolean("scan_all", v) }
+
     companion object {
         val MODELS = listOf("에어팟 1·2", "에어팟 프로", "파워비츠 프로", "에어팟 3", "에어팟 4")
         val PERCENT_TYPES = listOf("가장 닳은 기기 (케이스 포함)", "왼쪽", "오른쪽", "케이스")

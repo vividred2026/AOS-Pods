@@ -1,6 +1,5 @@
 package pro.aospods.app
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.*
 import android.bluetooth.BluetoothAdapter
@@ -8,7 +7,6 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -28,16 +26,26 @@ object PodsRepo {
     val error = MutableStateFlow<String?>(null)
     /** 서비스를 끄지 않는 비치명적 안내(스캔 상태 등). */
     val status = MutableStateFlow<String?>(null)
+    /** 착용 신호(0x07) 수신 여부. null = 판단 전(연결 안 됨 등), true = 최근 수신, false = 연결 중인데 신호 없음. */
+    val wearSignal = MutableStateFlow<Boolean?>(null)
     /** 진단용: 마지막 에어팟(0x07) 패킷 원문 16진수 · 받은 시각 · 신호 세기. */
     @Volatile var lastRawHex: String = ""
     @Volatile var lastRawAt: Long = 0L
     @Volatile var lastRssi: Int = 0
     @Volatile var rawCount: Int = 0
     @Volatile var diagLine: String = ""
+    /** 진단용: 최근 서로 다른 0x07 원문(최대 6개, "RSSI 원문"). 왼쪽 누락 등 판정용. */
+    val recentRaw = ArrayDeque<String>()
     fun update(p: Pods?) { _pods.value = p }
+
+    fun addRecent(hex: String, rssi: Int) = synchronized(recentRaw) {
+        if (recentRaw.any { it.endsWith(hex) }) return@synchronized
+        recentRaw.addLast("$rssi $hex")
+        while (recentRaw.size > 6) recentRaw.removeFirst()
+    }
 }
 
-/** Apple 제조사 광고(0x004C, 07 19)를 스캔하는 포그라운드 서비스. */
+/** Apple 제조사 광고(0x004C)를 스캔하는 포그라운드 서비스. */
 class ScanService : Service() {
 
     private var scanner: BluetoothLeScanner? = null
@@ -46,35 +54,44 @@ class ScanService : Service() {
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private val audioManager by lazy { getSystemService(AudioManager::class.java) }
 
-    // STEP 3: 직전 '양쪽 착용' 상태 · 현재 보유 중인 오디오 포커스 요청
-    private var prevWorn: Int? = null          // 직전에 확정된 '끼고 있는 개수'(0~2)
-    private var pendingWorn: Int? = null       // 오신호 방지: 같은 값이 2번 연속 와야 확정
-    private var pendingCount = 0
+    // STEP 3: 착용 판단 · 현재 보유 중인 오디오 포커스 요청
+    private val wear = WearDetector()
     private var focusRequest: AudioFocusRequest? = null
 
-    /** 스캔을 시작했지만 일정 시간 내 실제 기기를 못 찾았을 때의 폴백.
-     *  에뮬레이터처럼 BLE 스캔 결과가 오지 않는 환경에서도 화면이 비지 않게 한다. */
-    // 진단 카운터: 전체 BLE / 애플(0x4C) / 에어팟(0x07) 패킷 수
+    // 진단 카운터: 수신 BLE / 애플(0x4C) / 0x07 / 반영된 에어팟 패킷 수
     private var cTotal = 0
     private var cApple = 0
     private var cPods = 0
-    private var lastAppleHex = ""
     private var c07 = 0
     private var last07Hex = ""
     private val typeCounts = sortedMapOf<Int, Int>()
+    private var connectedSince = 0L
 
-    /** 실제 에어팟을 찾을 때까지 5초마다 수신 현황을 알리고, 그동안만 데모를 표시. */
-    private val demoFallback = object : Runnable {
+    private var scanning = false
+    private var scanAllMode = false
+    private var btReceiver: android.content.BroadcastReceiver? = null
+
+    /** 5초마다 진단 문구와 '착용 신호 수신 여부'를 갱신. */
+    private val diagTicker = object : Runnable {
         override fun run() {
-            if (cPods > 0) return
-            // 연결 전에는 진단 토스트를 띄우지 않음(앱 화면의 연결 상태 안내로 대신)
-            if (BtState.connectedName.value == null) { handler.postDelayed(this, 5000); return }
+            val now = System.currentTimeMillis()
             val types = typeCounts.entries.sortedByDescending { it.value }.take(5)
                 .joinToString(" ") { "%02X×%d".format(it.key, it.value) }
-            PodsRepo.diagLine = "진단: BLE $cTotal · 애플 $cApple · 07 $c07 · 에어팟 0" +
+            PodsRepo.diagLine = "진단(${if (scanAllMode) "전체 스캔" else "애플 필터"}): " +
+                "BLE $cTotal · 애플 $cApple · 07 $c07 · 반영 $cPods" +
                 "\n유형: $types" +
                 (if (last07Hex.isNotEmpty()) "\n07: ${last07Hex.take(20)}…" else "")
-            // 데모(가짜 값)는 표시하지 않음 — 실제 에어팟을 찾을 때까지 '찾는 중' 상태 유지
+
+            if (BtState.connectedName.value == null) {
+                connectedSince = 0L; PodsRepo.wearSignal.value = null
+            } else {
+                if (connectedSince == 0L) connectedSince = now
+                PodsRepo.wearSignal.value = when {
+                    PodsRepo.lastRawAt > 0 && now - PodsRepo.lastRawAt < WEAR_SIGNAL_WINDOW_MS -> true
+                    now - connectedSince >= WEAR_SIGNAL_WINDOW_MS -> false
+                    else -> null
+                }
+            }
             handler.postDelayed(this, 5000)
         }
     }
@@ -86,7 +103,6 @@ class ScanService : Service() {
                 val data = result.scanRecord?.getManufacturerSpecificData(AirPodsParser.appleId())
                     ?: return
                 cApple++
-                lastAppleHex = data.joinToString("") { "%02X".format(it) }
                 AirPodsParser.messageTypes(data).forEach { typeCounts[it] = (typeCounts[it] ?: 0) + 1 }
                 AirPodsParser.findProximity(data)?.let { p ->
                     c07++; last07Hex = p.joinToString("") { "%02X".format(it) }
@@ -94,14 +110,14 @@ class ScanService : Service() {
                     PodsRepo.lastRawAt = System.currentTimeMillis()
                     PodsRepo.lastRssi = result.rssi
                     PodsRepo.rawCount = c07
+                    PodsRepo.addRecent(last07Hex, result.rssi)
                 }
                 val pods = AirPodsParser.parse(data, prefs.model) ?: return
                 // 이 폰에 에어팟(오디오 기기)이 연결돼 있을 때만 배터리 처리
                 if (BtState.connectedName.value == null) return
                 if (pods.hasAny) {
-                    if (cPods == 0) PodsRepo.status.value = "실제 에어팟 감지! ${pods.left}/${pods.right}/${pods.case}%"
+                    if (cPods == 0) PodsRepo.status.value = "에어팟 감지 ${pods.left}/${pods.right}/${pods.case}%"
                     cPods++
-                    handler.removeCallbacks(demoFallback)
                     deliver(pods)
                 }
             } catch (_: Throwable) { /* 한 패킷 처리 실패가 앱을 죽이지 않도록 */ }
@@ -110,6 +126,7 @@ class ScanService : Service() {
             results?.forEach { onScanResult(0, it) }
         }
         override fun onScanFailed(errorCode: Int) {
+            scanning = false
             val hint = when (errorCode) {
                 SCAN_FAILED_ALREADY_STARTED -> "이미 스캔 중"
                 SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "앱 등록 실패"
@@ -126,31 +143,29 @@ class ScanService : Service() {
     /** 배터리 상태를 저장소 · 알림 · 팝업에 반영. 어떤 예외도 앱을 죽이지 않게 격리. */
     private fun deliver(pods: Pods) {
         try {
+            handleAutoPause(pods)            // STEP 3 착용 감지는 매 패킷 판단(2회 연속 확정)
+            // 광고는 초당 여러 번 오므로 값이 바뀐 경우에만 알림·팝업·타일을 다시 그림
+            // (알림을 너무 자주 갱신하면 시스템이 버림)
+            if (pods == PodsRepo.pods.value) return
             PodsRepo.update(pods)
-            notify(pods)   // 내용은 buildNotification이 설정에 맞게 결정
-            // 팝업: 설정이 켜져 있고, 양쪽 착용 숨김 조건이 아니면 오버레이 표시
-            val hide = prefs.hidePopupWhenInEar && pods.leftInEar && pods.rightInEar
-            if (prefs.popup && !hide) overlay.show(pods, prefs) else overlay.hide()
-            handleAutoPause(pods)            // STEP 3 착용 감지 일시정지·재생
-            OnOffTileService.refresh(this)   // 타일 배터리 보조 문구 갱신
+            notify(pods)
+            showOrHidePopup(pods)
+            OnOffTileService.refresh(this)
         } catch (_: Throwable) { /* 표시 단계 오류는 무시하고 스캔은 계속 */ }
     }
 
-    /** STEP 3: 양쪽 착용 → 해제 전환 시 일시정지(포커스 획득),
-     *  해제 → 양쪽 착용 전환 시 재생(포커스 반환). 통화 중에는 동작 안 함. */
+    /** 팝업: 설정이 켜져 있고, 양쪽 착용 숨김 조건이 아니면 오버레이 표시. */
+    private fun showOrHidePopup(pods: Pods) {
+        val hide = prefs.hidePopupWhenInEar && pods.leftInEar && pods.rightInEar
+        if (prefs.popup && !hide) overlay.show(pods, prefs) else overlay.hide()
+    }
+
+    /** STEP 3: 끼고 있는 개수가 줄면 일시정지(포커스 획득), 늘면 재생(포커스 반환). 통화 중에는 동작 안 함. */
     private fun handleAutoPause(pods: Pods) {
-        if (!prefs.autoPause && !prefs.autoResume) { prevWorn = null; return }
+        if (!prefs.autoPause && !prefs.autoResume) { wear.reset(); return }
         val mode = audioManager.mode
         if (mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION) return
-
-        val wornNow = (if (pods.leftInEar) 1 else 0) + (if (pods.rightInEar) 1 else 0)
-        // 순간적인 오신호로 멈추지 않도록, 같은 착용 개수가 2번 연속일 때만 확정
-        if (wornNow != pendingWorn) { pendingWorn = wornNow; pendingCount = 1; return }
-        if (++pendingCount < 2) return
-        if (wornNow == prevWorn) return
-        val action = decideFocus(prevWorn, wornNow, prefs.autoPause, prefs.autoResume)
-        prevWorn = wornNow
-        when (action) {
+        when (wear.feed(pods.wornCount, prefs.autoPause, prefs.autoResume)) {
             FocusAction.PAUSE -> requestPause()
             FocusAction.RESUME -> abandonResume()
             FocusAction.NONE -> {}
@@ -160,35 +175,26 @@ class ScanService : Service() {
     /** 일시 독점 포커스를 요청하면 재생 중인 음악 앱이 스스로 멈춘다. */
     private fun requestPause() {
         if (focusRequest != null) return
-        if (Build.VERSION.SDK_INT >= 26) {
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                .setOnAudioFocusChangeListener({ change ->
-                    // 사용자가 음악 앱에서 직접 재생하면 포커스를 잃음 → 보유 해제해 다음 일시정지가 다시 동작
-                    if (change == AudioManager.AUDIOFOCUS_LOSS) abandonResume()
-                }, handler)
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
-                ).build()
+        // 재생 중이 아니면 포커스를 잡지 않음(잡아두면 나중에 엉뚱하게 재생이 재개될 수 있음)
+        if (!audioManager.isMusicActive) return
+        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            .setOnAudioFocusChangeListener({ change ->
+                // 사용자가 음악 앱에서 직접 재생하면 포커스를 잃음 → 보유 해제해 다음 일시정지가 다시 동작
+                if (change == AudioManager.AUDIOFOCUS_LOSS) abandonResume()
+            }, handler)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
+            ).build()
+        if (audioManager.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             focusRequest = req
-            audioManager.requestAudioFocus(req)
-        } else {
-            @Suppress("DEPRECATION")
-            audioManager.requestAudioFocus(
-                null, AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
-            )
         }
     }
 
     /** 포커스를 반환하면 멈췄던 음악 앱이 재생을 재개한다. */
     private fun abandonResume() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
-        } else {
-            @Suppress("DEPRECATION") audioManager.abandonAudioFocus(null)
-        }
+        focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
         focusRequest = null
     }
 
@@ -209,32 +215,39 @@ class ScanService : Service() {
         }
         PodsRepo.error.value = null
         PodsRepo.running.value = true
-        if (!prefs.popup) overlay.hide()          // 팝업 OFF 즉시 반영
         registerBt()
+        // 설정 변경(팝업 ON/OFF·여백 등)을 이미 떠 있는 팝업에 즉시 반영
+        val p = PodsRepo.pods.value
+        if (p != null && p.hasAny && BtState.connectedName.value != null) showOrHidePopup(p)
+        else if (!prefs.popup) overlay.hide()
+        // 진단 화면에서 스캔 방식을 바꾼 경우 다시 시작
+        if (scanning && scanAllMode != prefs.scanAll) stopScan()
         startScan()
+        handler.removeCallbacks(diagTicker)
+        handler.post(diagTicker)
         return START_STICKY
     }
 
-    @SuppressLint("MissingPermission")
-    private var scanning = false
-    private var btReceiver: android.content.BroadcastReceiver? = null
-
-    /** 연결/해제 시: 연결되면 다음 패킷부터 표시, 끊기면 팝업·값 정리. */
+    /** 연결/해제·블루투스 ON/OFF 시: 연결되면 다음 패킷부터 표시, 끊기면 팝업·값 정리. */
     private fun registerBt() {
         if (btReceiver != null) return
         BtState.refresh(this)
-        val r = BtState.receiver {
-            handler.postDelayed({
-                if (BtState.connectedName.value != null) {
-                    // 연결 중: BLE 상세값이 없으면 HFP 전체 배터리로 알림 갱신
-                    try { getSystemService(NotificationManager::class.java)
-                        .notify(NOTIF_ID, buildNotification(PodsRepo.pods.value)) } catch (_: Exception) {}
-                } else {
-                    if (!prefs.showWhenDisconnected) PodsRepo.update(null)
-                    overlay.hide(); prevWorn = null
-                    try { getSystemService(NotificationManager::class.java)
-                        .notify(NOTIF_ID, buildNotification(PodsRepo.pods.value)) } catch (_: Exception) {}
+        val r = BtState.receiver { action, adapterState ->
+            if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+                when (adapterState) {
+                    BluetoothAdapter.STATE_ON -> startScan()   // 블루투스를 다시 켜면 스캔 재시작
+                    BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF -> {
+                        stopScan(); overlay.hide()
+                    }
                 }
+            }
+            handler.postDelayed({
+                if (BtState.connectedName.value == null) {
+                    if (!prefs.showWhenDisconnected) PodsRepo.update(null)
+                    overlay.hide(); wear.reset(); abandonResume()
+                }
+                // 연결 중이면 BLE 상세값이 없을 때 HFP 전체 배터리로, 끊기면 끊김 상태로 알림 갱신
+                notifyCurrent()
                 OnOffTileService.refresh(this)
             }, 800)   // 프로파일 조회(비동기) 결과 반영 대기
         }
@@ -242,44 +255,53 @@ class ScanService : Service() {
         ContextCompat.registerReceiver(this, r, BtState.filter, ContextCompat.RECEIVER_EXPORTED)
     }
 
+    @SuppressLint("MissingPermission")
     private fun startScan() {
         if (scanning) return   // 이미 스캔 중이면 재시작하지 않음(카운터·값 유지, 잦은 재시작 방지)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
-            != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= 31
-        ) return
-
-        val bt = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+        if (!Perms.ok(this)) {
+            PodsRepo.status.value = "권한이 없어 에어팟을 찾을 수 없어요 — 앱에서 권한을 허용해 주세요"
+            return
+        }
+        val bt = getSystemService(BluetoothManager::class.java)?.adapter
         if (bt == null || !bt.isEnabled) {
-            // 가짜 값을 보여주지 않고, 블루투스를 켜라고 안내만 함
+            // 가짜 값을 보여주지 않고, 블루투스를 켜라고 안내만 함. 켜지면 리시버가 다시 시작
             PodsRepo.status.value = "블루투스가 꺼져 있어요 — 켜면 에어팟을 찾습니다"
             overlay.hide()
             return
         }
-        PodsRepo.update(null)   // 이전 값(혹시 남은 데모 포함) 초기화
-        // 위치 서비스가 꺼져 있으면 많은 기기에서 BLE 스캔 결과가 오지 않음 — 안내
-        if (!locationEnabled()) {
+        // 30 이하는 위치 서비스가 꺼져 있으면 BLE 스캔 결과가 오지 않음 — 안내
+        if (Build.VERSION.SDK_INT < 31 && !locationEnabled()) {
             PodsRepo.status.value = "위치 서비스가 꺼져 있으면 에어팟을 못 찾을 수 있어요(설정 > 위치 ON)"
         }
         scanner = bt.bluetoothLeScanner
-        // 진단 빌드: 필터 없이 전체 BLE를 받아 단계별(전체/애플/에어팟)로 집계
-        cTotal = 0; cApple = 0; cPods = 0; lastAppleHex = ""
+        cTotal = 0; cApple = 0; cPods = 0
         c07 = 0; last07Hex = ""; typeCounts.clear()
+        scanAllMode = prefs.scanAll
+        // 기본: 애플 제조사(0x4C) 필터 — 데이터 조건 없이 회사 ID만 거르므로 이어붙은 메시지도 모두 받음.
+        // 필터가 있어야 화면이 꺼져도 스캔이 계속됨(안드로이드 8.1+는 필터 없는 스캔을 화면 OFF 시 중단).
+        val filters = if (scanAllMode) null else listOf(
+            ScanFilter.Builder().setManufacturerData(AirPodsParser.appleId(), byteArrayOf()).build()
+        )
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .setReportDelay(0L).build()
         try {
-            scanner?.startScan(null, settings, callback)
+            val s = scanner ?: run { PodsRepo.status.value = "BLE 스캐너를 사용할 수 없어요"; return }
+            s.startScan(filters, settings, callback)
             scanning = true
             PodsRepo.status.value = "에어팟 검색 중… 케이스 뚜껑을 열어주세요"
-            // 실제 기기 광고가 올 때까지 대기하되, 못 찾으면 데모로 화면을 채움
-            handler.removeCallbacks(demoFallback)
-            handler.postDelayed(demoFallback, SCAN_TIMEOUT_MS)
         } catch (e: Exception) {
             PodsRepo.status.value = "스캔 시작 실패: ${e.message}"
         }
     }
 
-    /** 시스템 위치 서비스 ON 여부 (BLE 스캔 결과 수신의 전제 조건이 되는 기기가 많음). */
+    @SuppressLint("MissingPermission")
+    private fun stopScan() {
+        try { scanner?.stopScan(callback) } catch (_: Exception) {}
+        scanning = false
+    }
+
+    /** 시스템 위치 서비스 ON 여부 (30 이하에서 BLE 스캔 결과 수신의 전제 조건). */
     private fun locationEnabled(): Boolean = try {
         val lm = getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
         if (Build.VERSION.SDK_INT >= 28) lm.isLocationEnabled
@@ -287,36 +309,38 @@ class ScanService : Service() {
             lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
     } catch (_: Exception) { true }
 
-    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         super.onDestroy()
         PodsRepo.running.value = false
-        scanning = false
+        PodsRepo.wearSignal.value = null
         btReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
         btReceiver = null
-        handler.removeCallbacks(demoFallback)
+        handler.removeCallbacksAndMessages(null)
         abandonResume()   // 보유 중인 오디오 포커스 반환
         overlay.hide()
-        try { scanner?.stopScan(callback) } catch (_: Exception) {}
+        stopScan()
     }
 
-    private fun notify(pods: Pods) {
-        val mgr = getSystemService(NotificationManager::class.java)
+    private fun notifyCurrent() {
+        try { notifyRaw(buildNotification(PodsRepo.pods.value)) } catch (_: Exception) {}
+    }
+
+    private fun notify(pods: Pods) = notifyRaw(buildNotification(pods))
+
+    private fun notifyRaw(n: Notification) {
         if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return
-        mgr.notify(NOTIF_ID, buildNotification(pods))
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID, n)
     }
 
     private fun buildNotification(pods: Pods?): Notification {
         val mgr = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= 26) {
-            mgr.createNotificationChannel(
-                NotificationChannel(CHANNEL, "AosPods", NotificationManager.IMPORTANCE_LOW)
-                    .apply { setShowBadge(false) }
-            )
-        }
+        mgr.createNotificationChannel(
+            NotificationChannel(CHANNEL, "AosPods", NotificationManager.IMPORTANCE_LOW)
+                .apply { setShowBadge(false) }
+        )
         val connected = pods != null && pods.hasAny
         val linked = BtState.connectedName.value != null
         val pi = PendingIntent.getActivity(
@@ -373,36 +397,25 @@ class ScanService : Service() {
         else -> listOf(p.left, p.right, p.case).filter { it > 0 }.minOrNull()
     }
 
-    /** N-02 표시 기준에 따라 알림에 쓸 한 줄. */
-    private fun basisLine(p: Pods): String = when (prefs.percentType) {
-        Prefs.PERCENT_TYPES[1] -> "왼쪽 ${p.left}%"
-        Prefs.PERCENT_TYPES[2] -> "오른쪽 ${p.right}%"
-        Prefs.PERCENT_TYPES[3] -> "케이스 ${p.case}%"
-        else -> {
-            val vals = listOf(p.left, p.right, p.case).filter { it > 0 }
-            if (vals.isEmpty()) "연결됨" else "가장 낮음 ${vals.min()}%"
+    /** N-02 표시 기준에 따라 알림에 쓸 한 줄. 값이 없으면 "--". */
+    private fun basisLine(p: Pods): String {
+        fun v(x: Int) = if (x > 0) "$x%" else "--"
+        return when (prefs.percentType) {
+            Prefs.PERCENT_TYPES[1] -> "왼쪽 ${v(p.left)}"
+            Prefs.PERCENT_TYPES[2] -> "오른쪽 ${v(p.right)}"
+            Prefs.PERCENT_TYPES[3] -> "케이스 ${v(p.case)}"
+            else -> {
+                val vals = listOf(p.left, p.right, p.case).filter { it > 0 }
+                if (vals.isEmpty()) "연결됨" else "가장 낮음 ${vals.min()}%"
+            }
         }
     }
-
-    enum class FocusAction { PAUSE, RESUME, NONE }
 
     companion object {
         private const val CHANNEL = "aospods"
         private const val NOTIF_ID = 1
-        private const val SCAN_TIMEOUT_MS = 6000L   // 이 시간 내 못 찾으면 데모 폴백
-
-        /** 착용 상태 전환 → 오디오 포커스 동작 결정 (순수 함수, 테스트 대상).
-         *  양쪽착용→해제 = 일시정지, 해제→양쪽착용 = 재생, 그 외/첫 패킷 = 없음. */
-        /** 끼고 있는 개수 변화 → 동작. 하나라도 빼면 일시정지, 다시 끼면 재생. 첫 확정값은 기준만 잡음. */
-        fun decideFocus(
-            prevWorn: Int?, wornNow: Int,
-            autoPause: Boolean, autoResume: Boolean,
-        ): FocusAction = when {
-            prevWorn == null -> FocusAction.NONE
-            wornNow < prevWorn && autoPause -> FocusAction.PAUSE
-            wornNow > prevWorn && autoResume -> FocusAction.RESUME
-            else -> FocusAction.NONE
-        }
+        /** 연결 후 이 시간 동안 0x07이 한 건도 없으면 '착용 신호 없음'으로 표시. */
+        private const val WEAR_SIGNAL_WINDOW_MS = 30_000L
 
         fun batteryLine(p: Pods, sep: String = "  "): String = buildList {
             if (p.left > 0) add("왼쪽 ${p.left}%")
@@ -410,8 +423,17 @@ class ScanService : Service() {
             if (p.case > 0) add("케이스 ${p.case}%")
         }.joinToString(sep)
 
-        fun start(ctx: Context) =
-            ContextCompat.startForegroundService(ctx, Intent(ctx, ScanService::class.java))
+        /** 서비스 시작. 백그라운드 시작 제한 등으로 실패하면 false (앱이 죽지 않게). */
+        fun start(ctx: Context): Boolean = try {
+            ContextCompat.startForegroundService(ctx, Intent(ctx, ScanService::class.java)); true
+        } catch (e: Exception) {
+            PodsRepo.status.value = "서비스를 시작하지 못했어요: ${e.message ?: e}"; false
+        }
+
+        /** 서비스가 켜져 있으면 설정 변경을 알림·팝업에 즉시 반영. */
+        fun applySettings(ctx: Context) {
+            if (Prefs(ctx).serviceEnabled && Perms.ok(ctx)) start(ctx)
+        }
 
         fun stop(ctx: Context) = ctx.stopService(Intent(ctx, ScanService::class.java))
     }

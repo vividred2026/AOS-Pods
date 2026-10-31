@@ -3,6 +3,9 @@
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/>
 
+    <!-- 안드로이드 11 이하: 블루투스 사용·스캔·페어링에 필요한 일반 권한 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>

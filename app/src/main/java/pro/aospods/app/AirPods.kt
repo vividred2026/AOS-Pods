@@ -14,10 +14,8 @@ data class Pods(
 ) {
     val hasAny: Boolean get() = left > 0 || right > 0 || case > 0
 
-    companion object {
-        /** 에뮬레이터 등 블루투스가 없을 때 디자인 확인용 데모 값. */
-        val DEMO = Pods("에어팟 4 · 데모", 85, 85, 55, false, false, true, true, false)
-    }
+    /** 지금 귀에 끼고 있는 개수(0~2). */
+    val wornCount: Int get() = (if (leftInEar) 1 else 0) + (if (rightInEar) 1 else 0)
 }
 
 object AirPodsParser {

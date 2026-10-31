@@ -24,4 +24,9 @@ class PercentSettingsActivity : AppCompatActivity() {
                 }.setNegativeButton("닫기", null).show()
         }
     }
+
+    override fun onPause() {
+        super.onPause()
+        ScanService.applySettings(this)   // 바뀐 설정을 알림에 즉시 반영
+    }
 }

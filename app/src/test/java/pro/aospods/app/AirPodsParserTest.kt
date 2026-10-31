@@ -59,3 +59,11 @@ class ProximityTlvTest {
         org.junit.Assert.assertNull(AirPodsParser.findProximity(hex("0C0E00AAC339" + "00".repeat(10))))
     }
 }
+
+class WornCountTest {
+    @org.junit.Test fun countsBuds() {
+        val p = Pods("x", 50, 50, 50, false, false, false, true, false)
+        org.junit.Assert.assertEquals(1, p.wornCount)
+        org.junit.Assert.assertEquals(2, p.copy(rightInEar = true).wornCount)
+    }
+}

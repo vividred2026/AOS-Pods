@@ -1,16 +1,13 @@
 package pro.aospods.app
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
 
 /** 빠른 설정 타일로 서비스 ON/OFF (와이어프레임 O-02 · OnOffTileService). */
 @RequiresApi(Build.VERSION_CODES.N)
@@ -23,29 +20,32 @@ class OnOffTileService : TileService() {
         render()
     }
 
-    @SuppressLint("StartActivityAndCollapseDeprecated") // <34는 Intent 오버로드만 가능
     override fun onClick() {
         super.onClick()
         val turningOn = !prefs.serviceEnabled
-        if (turningOn && !scanPermsOk()) {
-            // 권한이 없으면 앱을 열어 권한을 요청하도록 안내
-            val i = Intent(this, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (Build.VERSION.SDK_INT >= 34) {
-                startActivityAndCollapse(
-                    android.app.PendingIntent.getActivity(
-                        this, 0, i, android.app.PendingIntent.FLAG_IMMUTABLE
-                    )
-                )
-            } else {
-                @Suppress("DEPRECATION") startActivityAndCollapse(i)
-            }
-            return
-        }
+        // 권한이 없으면 앱을 열어 권한을 요청하도록 안내
+        if (turningOn && !Perms.ok(this)) { openApp(); return }
         prefs.serviceEnabled = turningOn
-        if (turningOn) ScanService.start(this)
-        else { ScanService.stop(this); PodsRepo.update(null) }
+        if (turningOn) {
+            // 백그라운드 시작 제한 등으로 실패하면 앱을 열어 거기서 시작
+            if (!ScanService.start(this)) { openApp(); return }
+        } else { ScanService.stop(this); PodsRepo.update(null) }
         render()
+    }
+
+    @SuppressLint("StartActivityAndCollapseDeprecated") // <34는 Intent 오버로드만 가능
+    private fun openApp() {
+        val i = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (Build.VERSION.SDK_INT >= 34) {
+            startActivityAndCollapse(
+                android.app.PendingIntent.getActivity(
+                    this, 0, i, android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+        } else {
+            @Suppress("DEPRECATION") startActivityAndCollapse(i)
+        }
     }
 
     /** 타일 라벨 · 상태 · 보조 문구를 현재 상태에 맞춰 갱신. */
@@ -65,14 +65,6 @@ class OnOffTileService : TileService() {
             }
         }
         tile.updateTile()
-    }
-
-    private fun scanPermsOk(): Boolean {
-        if (Build.VERSION.SDK_INT >= 31 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
-            != PackageManager.PERMISSION_GRANTED
-        ) return false
-        return true
     }
 
     companion object {

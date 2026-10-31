@@ -2,7 +2,6 @@ package pro.aospods.app
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,7 +11,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import pro.aospods.app.databinding.ActivityMainBinding
@@ -31,6 +29,22 @@ class MainActivity : AppCompatActivity() {
             prefs.serviceEnabled = false; b.swService.isChecked = false
             toast("서비스를 켜려면 블루투스·알림 권한이 필요합니다.")
         }
+        // '다시 묻지 않음'으로 거부되면 요청 창이 더 뜨지 않으므로 앱 설정으로 안내
+        val blocked = missingRuntime().filter { !shouldShowRequestPermissionRationale(it) }
+        if (blocked.isNotEmpty() && blocked.size == missingRuntime().size) openAppSettingsDialog()
+    }
+
+    private fun openAppSettingsDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("권한이 거부되어 있어요")
+            .setMessage("앱 설정 > 권한에서 블루투스(주변 기기)·알림 권한을 허용해 주세요.")
+            .setPositiveButton("앱 설정 열기") { _, _ ->
+                try {
+                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:$packageName")))
+                } catch (_: Exception) {}
+            }
+            .setNegativeButton("닫기", null).show()
     }
 
     private val overlayLauncher = registerForActivityResult(
@@ -40,7 +54,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
-        AppCompatDelegate.setDefaultNightMode(prefs.nightMode)
         b = ActivityMainBinding.inflate(layoutInflater)
         setContentView(b.root)
 
@@ -55,7 +68,10 @@ class MainActivity : AppCompatActivity() {
 
         b.swService.setOnCheckedChangeListener { _, on ->
             prefs.serviceEnabled = on
-            if (on) { if (runtimePermsOk()) ScanService.start(this) else requestRuntimePerms() }
+            if (on) {
+                if (!runtimePermsOk()) requestRuntimePerms()
+                else if (!ScanService.start(this)) { prefs.serviceEnabled = false; b.swService.isChecked = false }
+            }
             else { ScanService.stop(this); PodsRepo.update(null) }
             OnOffTileService.refresh(this)   // 빠른 설정 타일 상태 동기화
         }
@@ -88,6 +104,19 @@ class MainActivity : AppCompatActivity() {
                         else -> "연결됨 · $n · 배터리 확인 중"
                     }
                     b.btnPair.text = if (n == null) "연결하기" else "다시 연결"
+                }
+        }
+        // 착용 감지: 연결 중인데 에어팟이 착용 신호(0x07)를 보내지 않으면 솔직하게 안내
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(PodsRepo.wearSignal, PodsRepo.running) { w, r -> w to r }
+                .collect { (w, r) ->
+                    b.wearStatus.text = when {
+                        !r -> "서비스를 켜면 착용 신호를 확인해요"
+                        w == true -> "착용 신호 수신 중"
+                        w == false -> "에어팟이 착용 신호를 보내지 않고 있어요 — " +
+                            "이 폰·모델에서는 착용 감지가 동작하지 않을 수 있어요"
+                        else -> "에어팟 연결 후 착용 신호를 확인해요"
+                    }
                 }
         }
         b.btnPermLoc.setOnClickListener { requestRuntimePerms() }
@@ -142,7 +171,7 @@ class MainActivity : AppCompatActivity() {
     private fun pct(v: Int) = if (v > 0) "$v%" else "--"
 
     /** 설정 변경을 다음 신호를 기다리지 않고 알림·팝업에 즉시 반영. */
-    private fun applyNow() { if (prefs.serviceEnabled && runtimePermsOk()) ScanService.start(this) }
+    private fun applyNow() = ScanService.applySettings(this)
 
     private fun open(cls: Class<*>) = startActivity(Intent(this, cls))
     private fun toast(msg: String) =
@@ -150,20 +179,8 @@ class MainActivity : AppCompatActivity() {
 
     // --- 권한 ---
 
-    private fun runtimePerms(): Array<String> {
-        val list = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        if (Build.VERSION.SDK_INT >= 31) {
-            list += Manifest.permission.BLUETOOTH_SCAN
-            list += Manifest.permission.BLUETOOTH_CONNECT
-        }
-        if (Build.VERSION.SDK_INT >= 33) list += Manifest.permission.POST_NOTIFICATIONS
-        return list.toTypedArray()
-    }
-
-    private fun missingRuntime() = runtimePerms().filter {
-        ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-    }
-    private fun runtimePermsOk() = missingRuntime().isEmpty()
+    private fun missingRuntime() = Perms.missing(this)
+    private fun runtimePermsOk() = Perms.ok(this)
     private fun requestRuntimePerms() = permLauncher.launch(missingRuntime().toTypedArray())
 
     private fun canOverlay() =
@@ -180,7 +197,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshPermissionUi() {
         val missing = missingRuntime()
-        val locMissing = missing.contains(Manifest.permission.ACCESS_FINE_LOCATION)
+        val locMissing = missing.any {
+            it == Manifest.permission.ACCESS_FINE_LOCATION || it == Manifest.permission.ACCESS_COARSE_LOCATION
+        }
         val btMissing = missing.any {
             it == Manifest.permission.BLUETOOTH_SCAN || it == Manifest.permission.BLUETOOTH_CONNECT
         }
@@ -225,7 +244,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         BtState.refresh(this)
-        val r = BtState.receiver { }
+        val r = BtState.receiver { _, _ -> }
         btUiReceiver = r
         androidx.core.content.ContextCompat.registerReceiver(
             this, r, BtState.filter, androidx.core.content.ContextCompat.RECEIVER_EXPORTED
@@ -270,6 +289,8 @@ class MainActivity : AppCompatActivity() {
     private val seenAll = mutableSetOf<String>()               // 진단: 이름 유무 상관없이 발견된 기기
     private var pickDialog: AlertDialog? = null
     private var pickAdapter: android.widget.ArrayAdapter<String>? = null
+    /** 목록에 지금 보이는 순서 그대로(누른 항목과 실제 기기가 어긋나지 않게). */
+    private var shown: List<Found> = emptyList()
     private var discoveryReceiver: android.content.BroadcastReceiver? = null
 
     @android.annotation.SuppressLint("MissingPermission")
@@ -310,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         pickDialog = AlertDialog.Builder(this)
             .setTitle("에어팟 찾는 중… (약 12초)")
             .setAdapter(listAdapter) { _, which ->
-                val f = sortedFound().getOrNull(which) ?: return@setAdapter
+                val f = shown.getOrNull(which) ?: return@setAdapter
                 stopDiscovery(); bond(f.dev)
             }
             .setPositiveButton("다시 검색") { _, _ -> startOwnDiscovery() }
@@ -368,7 +389,8 @@ class MainActivity : AppCompatActivity() {
     private fun refreshPickList() {
         val a = pickAdapter ?: return
         a.clear()
-        a.addAll(sortedFound().map {
+        shown = sortedFound()
+        a.addAll(shown.map {
             val icon = when (it.cat) { 0 -> "🎧"; 1 -> "🔈"; else -> "·" }
             "$icon ${it.name}" + if (it.bonded) "  (페어링됨)" else ""
         })
@@ -405,7 +427,9 @@ class MainActivity : AppCompatActivity() {
     /** 마지막 에어팟 패킷 원문과 글자 위치별 해석값을 보여주고 복사할 수 있게 함. */
     private fun showDiag() {
         val hex = PodsRepo.lastRawHex
+        val recent = synchronized(PodsRepo.recentRaw) { PodsRepo.recentRaw.toList() }
         val head = "연결: ${BtState.connectedName.value ?: "없음"} · HFP 배터리: ${BtState.hfpBattery.value?.let { "$it%" } ?: "없음"}\n" +
+            "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL}\n" +
             PodsRepo.diagLine + "\n\n"
         val text = head + if (hex.isEmpty()) {
             "아직 받은 에어팟 배터리 신호(07)가 없습니다.\n케이스를 폰 옆에서 열고 잠시 후 다시 확인하세요."
@@ -425,11 +449,22 @@ class MainActivity : AppCompatActivity() {
                 appendLine("해석: 왼쪽 ${p.left}% · 오른쪽 ${p.right}% · 케이스 ${p.case}%")
                 appendLine("충전: 왼${p.leftCharging} 오${p.rightCharging} 케${p.caseCharging}")
                 appendLine("착용: 왼${p.leftInEar} 오${p.rightInEar}")
-                append("(0% = 값 없음, 원문 글자가 F)")
+                appendLine("(0% = 값 없음, 원문 글자가 F)")
+            }
+            if (recent.size > 1) {
+                appendLine()
+                appendLine("최근 서로 다른 원문(RSSI 원문):")
+                recent.forEach { appendLine(it) }
             }
         }
         AlertDialog.Builder(this).setTitle("진단 정보").setMessage(text)
             .setPositiveButton("닫기", null)
+            .setNegativeButton(if (prefs.scanAll) "애플 필터 스캔으로" else "전체 스캔으로") { _, _ ->
+                // 실기기 비교용: 필터 방식과 전체 스캔 방식의 07 수신 차이 확인
+                prefs.scanAll = !prefs.scanAll
+                applyNow()
+                toast(if (prefs.scanAll) "전체 스캔(진단) — 화면이 꺼지면 멈출 수 있어요" else "애플 필터 스캔")
+            }
             .setNeutralButton("복사") { _, _ ->
                 val cm = getSystemService(android.content.ClipboardManager::class.java)
                 cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods", text))

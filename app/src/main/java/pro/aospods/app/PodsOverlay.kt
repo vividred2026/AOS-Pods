@@ -1,7 +1,6 @@
 package pro.aospods.app
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.provider.Settings
@@ -11,13 +10,13 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import pro.aospods.app.databinding.SheetPodsBinding
 
 /** 다른 앱 위에 뜨는 시스템 오버레이 배터리 팝업 (O-01). */
 class PodsOverlay(private val ctx: Context) {
 
     private val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    private val themed = android.view.ContextThemeWrapper(ctx, R.style.Theme_AosPods)
     private var view: View? = null
     private var vb: SheetPodsBinding? = null
     /** 사용자가 닫기(X)를 누르면 true — 다음 hide()까지 다시 뜨지 않음. */
@@ -28,7 +27,8 @@ class PodsOverlay(private val ctx: Context) {
 
     fun show(p: Pods, prefs: Prefs) {
         if (!canShow() || dismissed) return
-        val binding = vb ?: SheetPodsBinding.inflate(LayoutInflater.from(ctx)).also { vb = it }
+        // 서비스 컨텍스트에는 앱 테마가 없어 ?attr 참조가 풀리지 않으므로 앱 테마를 입혀 inflate
+        val binding = vb ?: SheetPodsBinding.inflate(LayoutInflater.from(themed)).also { vb = it }
         binding.sheetClose.setOnClickListener { dismissed = true; remove() }
         bind(binding, p, prefs)
 
@@ -73,7 +73,8 @@ class PodsOverlay(private val ctx: Context) {
     }
 
     private fun bind(binding: SheetPodsBinding, p: Pods, prefs: Prefs) {
-        val title = prefs.popupTitle.ifBlank { p.model }
+        // 제목을 비우면 연결된 기기 이름(이름을 바꾼 에어팟은 바꾼 이름), 없으면 모델명
+        val title = prefs.popupTitle.ifBlank { BtState.connectedName.value ?: p.model }
         binding.sheetTitle.text = title
         binding.sheetTitle.textSize = prefs.popupTitleSize.toFloat()
         // 모서리 둥글기 · 여백 적용

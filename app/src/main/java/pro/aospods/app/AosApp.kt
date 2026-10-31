@@ -10,6 +10,8 @@ import java.util.Date
 class AosApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        // 다크 모드 설정을 어느 화면으로 시작하든 적용
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(Prefs(this).nightMode)
         val def = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {

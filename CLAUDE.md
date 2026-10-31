@@ -62,6 +62,8 @@ app/src/main/java/pro/aospods/app/
 │                           + PodsRepo(앱 전역 상태: pods/running/error/status/진단값)
 ├─ BtState.kt               연결된 오디오 기기 이름, HFP 전체 배터리, 연결/해제/배터리 방송 수신
 ├─ AirPods.kt               Pods 데이터 클래스 + AirPodsParser(findProximity/messageTypes/parse)
+├─ WearDetector.kt          착용 감지 판단(2회 연속 확정 · 일시정지/재생 결정) — 안드로이드 의존 없음
+├─ Perms.kt                 필수 런타임 권한 목록·확인 (MainActivity · 타일 공용)
 ├─ PodsOverlay.kt           시스템 오버레이 배터리 팝업(O-01), 닫기(X) 버튼
 ├─ PercentIcon.kt           상태바용 퍼센트 숫자 아이콘(5% 단위) 생성
 ├─ OnOffTileService.kt      빠른 설정 타일 — 서비스 ON/OFF (O-02)
@@ -71,8 +73,8 @@ app/src/main/java/pro/aospods/app/
 ├─ PercentSettingsActivity.kt   N-02 아이콘 퍼센트 기준 · 연결 끊겨도 표시
 └─ PopupSettingsActivity.kt     N-03 팝업 제목·글자 크기·모서리·여백·어둡게·양쪽 착용 시 숨김
 
-app/src/test/  — 단위 테스트 + Robolectric (총 26개, 전부 통과)
-  AirPodsParserTest(+ProximityTlvTest) · AutoPauseTest(+PercentIconTest) · NotificationTest
+app/src/test/  — 단위 테스트 + Robolectric
+  AirPodsParserTest(+ProximityTlvTest·WornCountTest) · AutoPauseTest(+WearDetectorTest·PercentIconTest) · NotificationTest
   InteractionTest · SmokeTest · TileTest
 ```
 
@@ -85,7 +87,8 @@ app/src/test/  — 단위 테스트 + Robolectric (총 26개, 전부 통과)
 6. 정보: 다크 모드 · 진단 정보 · 개인정보처리방침
 
 ### 권한
-`BLUETOOTH_SCAN`(neverForLocation) · `BLUETOOTH_CONNECT` · `ACCESS_FINE/COARSE_LOCATION` · `POST_NOTIFICATIONS` · `SYSTEM_ALERT_WINDOW`(팝업) · `FOREGROUND_SERVICE(_CONNECTED_DEVICE)`
+`BLUETOOTH_SCAN`(neverForLocation) · `BLUETOOTH_CONNECT` · `ACCESS_FINE/COARSE_LOCATION` · `POST_NOTIFICATIONS` · `SYSTEM_ALERT_WINDOW`(팝업) · `FOREGROUND_SERVICE(_CONNECTED_DEVICE)` · `BLUETOOTH`/`BLUETOOTH_ADMIN`(maxSdk 30)
+- 필수 런타임 권한(`Perms.required()`): 31+ = 블루투스 스캔·연결(+33+ 알림), 30 이하 = 위치 FINE+COARSE(+알림 없음). 31+는 neverForLocation이라 위치 권한·위치 서비스가 필요 없음.
 
 ---
 
@@ -119,14 +122,18 @@ app/src/test/  — 단위 테스트 + Robolectric (총 26개, 전부 통과)
 - 원인: 착용 정보는 **BLE 0x07 광고 안에만** 있는데, 에어팟을 **귀에 끼고 연결·재생 중일 때 0x07이 0건** 수신됨
   (실측: BLE 6182 · 애플 2122 · **07 0**). HFP 배터리에는 착용 정보가 없음.
 - 판단 로직 자체는 테스트 완료: "끼고 있는 개수" 기준, 하나라도 빼면 일시정지 / 다시 끼면 재생, 같은 상태 2회 연속일 때만 확정, 포커스를 음악 앱에 뺏기면 상태 초기화.
+- ✅ 앱에 **착용 신호 상태 표시** 추가: 연결 후 30초간 0x07이 없으면 착용 감지 아래에 "에어팟이 착용 신호를 보내지 않고 있어요" 안내 (`PodsRepo.wearSignal`).
+- ✅ 기존 전체 스캔은 **화면이 꺼지면 안드로이드가 멈춤**(8.1+) → 음악 들으며 화면 끈 상태에선 착용 감지가 원천적으로 불가했음. 기본 스캔을 애플 회사 ID(0x4C) 필터(데이터 조건 없음 → 이어붙은 메시지도 모두 수신)로 변경.
 - **다음 할 일**: 사용자에게 요청한 테스트 결과 확인 — 귀에 낀 채 한쪽을 뺐다 끼울 때 [진단 정보]의 `07` 수가 늘어나는지.
   - 늘어나면 → 해석·판단 쪽 수정으로 해결 가능
   - 계속 0이면 → 루팅 없이 일반 앱으로는 불가(애플 전용 AAP 프로토콜 필요). 스위치에 "이 기기에서는 지원되지 않음" 표시로 정리
 
 ### 🟠 2. 왼쪽 배터리가 안 나오는 경우가 있었음
 - 케이스를 연 상태에서 오른쪽·케이스만 표시된 적 있음. 원문 패킷 확인 필요 → [진단 정보] → [복사] 내용으로 판정.
+- ✅ 진단 정보에 **최근 서로 다른 0x07 원문 최대 6개(RSSI 포함)**와 폰 기종·안드로이드 버전을 함께 복사하도록 보강.
 
 ### 🟡 3. 진단용 코드가 아직 켜져 있음 (정식 빌드 전 정리 필요)
+- ✅ 기본 스캔 = 애플 회사 ID 필터(`07 19` 데이터 조건은 일부러 넣지 않음 — 이어붙은 메시지를 놓치므로). [진단 정보] → [전체 스캔으로]/[애플 필터 스캔으로] 버튼으로 실기기에서 07 수신 수를 비교 가능 (`Prefs.scanAll`).
 - 진단 카운터·`lastRawHex`·[진단 정보] 화면 — 유지할지 숨길지 결정.
 
 ### 🟢 4. 플로우차트 대비 미구현 (의도적 또는 보류)
@@ -150,6 +157,19 @@ app/src/test/  — 단위 테스트 + Robolectric (총 26개, 전부 통과)
 | 퍼센트 아이콘이 안 바뀜 | 상태바 아이콘이 고정 그림 | `PercentIcon`으로 숫자 비트맵 아이콘 |
 | "연결 끊겨도 표시" 무효 | 데모 제거 후 미사용 | 끊김 시 마지막 값 유지 |
 | 일시정지가 한쪽 착용 시 안 됨 / 한 번 뒤 영구 정지 | 양쪽 착용 기준 · 포커스 상실 미처리 | 착용 개수 기준 · `AUDIOFOCUS_LOSS` 시 초기화 |
+| 기기 이름이 없으면 MAC 노출 | `safeName()`이 `d.name ?: d.address` | 이름 없으면 "에어팟" |
+| 안드로이드 8~11에서 블루투스 미동작 | `BLUETOOTH`/`BLUETOOTH_ADMIN` 누락 | maxSdk 30으로 추가 |
+| 12+에서 위치 권한 창이 안 뜸 | FINE만 요청(COARSE 동시 요청 필수) | 30 이하만 FINE+COARSE 요청, 31+는 요청 안 함 |
+| 블루투스 껐다 켜면 스캔 영영 중단 | `scanning` 플래그 유지·상태 방송 미수신 | `ACTION_STATE_CHANGED` 수신 → OFF 시 정지, ON 시 재시작 |
+| 화면 끄면 BLE 수신 0 | 필터 없는 스캔은 화면 OFF 시 OS가 중단 | 애플 회사 ID 필터 스캔 |
+| 알림·팝업이 패킷마다 갱신(시스템이 버림) | 매 패킷 notify | 값이 바뀔 때만 갱신(착용 판단은 매 패킷) |
+| 팝업 inflate 실패 가능 | 서비스 컨텍스트에 앱 테마 없음(`?attr` 미해석) | `ContextThemeWrapper(Theme.AosPods)` |
+| 재생 중이 아닌데 포커스를 잡음 | 착용 변화만 보고 요청 | `isMusicActive`일 때만, 승인된 경우만 보유 |
+| 권한 '다시 묻지 않음' 시 막다른 길 | 요청 창이 안 뜸 | 앱 설정 열기 안내 |
+| 하위 설정 변경이 바로 반영 안 됨 | 다음 패킷까지 대기 | 하위 화면 onPause에서 `ScanService.applySettings()` |
+| 큰/작은 알림 동시 ON 가능 | 독립 스위치 | 하나만 켜지도록 |
+| 타일에서 시작 실패 시 크래시 가능 | 백그라운드 FGS 시작 제한 미처리 | `start()`가 예외를 잡고 false → 앱 열기 |
+| 팝업 제목이 모델명 | 기기 이름 미사용 | 연결된 기기 이름(없으면 모델명) |
 
 ---
 
@@ -161,7 +181,7 @@ app/src/test/  — 단위 테스트 + Robolectric (총 26개, 전부 통과)
 # 결과물: app/build/outputs/apk/debug/app-debug.apk (디버그 서명)
 ```
 
-- 원래 작업 환경엔 **gradle wrapper가 없어** 시스템 Gradle(8.14.3)로 빌드했습니다. 로컬에서 쓰려면 `gradle wrapper --gradle-version 8.9` 한 번 실행하거나 Android Studio로 여세요.
+- gradle wrapper(8.9) 포함. **GitHub Actions**(`.github/workflows/android.yml`)가 push마다 테스트·린트·디버그 APK를 빌드하고 `app-debug-apk` 아티팩트로 올립니다.
 - 소스 zip에는 `local.properties`를 뺐습니다. Android Studio로 열면 SDK 경로가 자동으로 잡힙니다.
 - AGP 8.5.2 · Kotlin Android 플러그인 · JDK 17
 - 실기기 설치: `adb install -r app/build/outputs/apk/debug/app-debug.apk`

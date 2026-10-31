@@ -37,6 +37,11 @@ class PopupSettingsActivity : AppCompatActivity() {
         b.swHide.setOnCheckedChangeListener { _, v -> prefs.hidePopupWhenInEar = v }
     }
 
+    override fun onPause() {
+        super.onPause()
+        ScanService.applySettings(this)   // 바뀐 설정을 떠 있는 팝업에 즉시 반영
+    }
+
     private fun seek(row: SeekRowBinding, title: String, min: Int, max: Int,
                      value: Int, save: (Int) -> Unit) {
         row.seekTitle.text = title

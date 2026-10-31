@@ -1,6 +1,5 @@
 package pro.aospods.app
 
-import android.Manifest
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,8 +16,7 @@ class TileTest {
     /** 타일 탭 → 서비스 ON/OFF 상태(Prefs)가 토글되는지 검증. */
     @Test fun tileClickTogglesServiceState() {
         // 권한이 있는 상태를 가정(없으면 타일은 앱을 열어 권한을 요청)
-        shadowOf(RuntimeEnvironment.getApplication())
-            .grantPermissions(Manifest.permission.BLUETOOTH_SCAN)
+        shadowOf(RuntimeEnvironment.getApplication()).grantPermissions(*Perms.required())
 
         val svc = Robolectric.buildService(OnOffTileService::class.java).create().get()
         val prefs = Prefs(svc)
