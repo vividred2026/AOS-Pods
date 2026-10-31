@@ -23,6 +23,9 @@
         <item name="android:textSize">15sp</item>
         <item name="android:fontFamily">@font/pretendard_medium</item>
         <item name="lineHeight">20sp</item>
+        <!-- 한 줄일 땐 lineHeight가 높이에 반영되지 않아 최소 높이로 행간 20을 보장 -->
+        <item name="android:minHeight">20sp</item>
+        <item name="android:gravity">center_vertical</item>
         <item name="android:letterSpacing">-0.013</item>
     </style>
     <style name="RowSub">
@@ -33,6 +36,8 @@
         <!-- 13 Regular · 행간 18 · 자간 -0.2 -->
         <item name="android:textSize">13sp</item>
         <item name="lineHeight">18sp</item>
+        <item name="android:minHeight">18sp</item>
+        <item name="android:gravity">center_vertical</item>
         <item name="android:letterSpacing">-0.015</item>
     </style>
     <style name="RowSwitch">
@@ -77,7 +82,8 @@
         <item name="android:background">?attr/selectableItemBackground</item>
         <!-- 탭 영역은 위아래로 6dp 넓히되 행 높이는 그대로(음수 여백으로 상쇄) -->
         <item name="android:paddingVertical">6dp</item>
-        <item name="android:layout_marginVertical">-6dp</item>
+        <item name="android:layout_marginTop">-6dp</item>
+        <item name="android:layout_marginBottom">-6dp</item>
     </style>
     <style name="AppBarTitle">
         <item name="android:layout_width">0dp</item>
