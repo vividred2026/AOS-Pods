@@ -91,11 +91,14 @@ app/src/test/  — 단위 테스트 + Robolectric
 
 ### 디자인 시스템 (Figma `++ aosPods - Complete` 페이지 아래쪽 보라 테마 화면, 2026-10-31 적용)
 - **브랜드 보라 `#5D22BB`**(`@color/accent`, 다크 `#A27BEF`) — 스위치 트랙·카테고리·[연결]·칩·버튼. 옛 주황(`orange`)은 전부 `accent`로 교체
-- **폰트 Pretendard**(OFL, `res/font/pretendard*.otf` — 자주 쓰는 한글 2,350자+영문·기호로 줄여 약 1.8MB, 라이선스 `assets/licenses/Pretendard-OFL.txt`). 없는 글자는 시스템 폰트로 대체
+- **폰트 Pretendard**(OFL, `res/font/pretendard*.ttf` — 자주 쓰는 한글 2,350자+영문·기호로 줄이고 TrueType으로 변환, 약 2.5MB, 라이선스 `assets/licenses/Pretendard-OFL.txt`). 없는 글자는 시스템 폰트로 대체
+  - ⚠️ 테마에는 `android:fontFamily`만 둘 것. `app:fontFamily`(AppCompat)를 테마에 넣으면 뷰별 `android:fontFamily="@font/pretendard_bold"` 등이 무시돼 모든 굵기가 Regular로 보임(실제로 겪음)
 - 로고·아이콘은 Figma 노드를 `exportAsync(SVG)`로 받아 VectorDrawable로 변환(`logo_bar` 메인 앱바 · `logo_perm` S-02 · `logo_splash`/`logo_befree` S-01 · `ic_check_box_*` · `ic_check_circle_*` · `ic_close`). figma.com 에셋 URL은 이 환경에서 막혀 있음
 - **S-01 스플래시**(`SplashActivity`, 런처, 1.2초) → 처음이면 **S-02 접근 권한 안내**(`PermissionActivity`: 체크=허용됨, 줄 탭=그 권한만 요청, [동의합니다]=전부 요청 → 다른 앱 위에 표시 → 메인, [나중에 설정하기]) → 메인. 위치(11 이하)는 먼저 **위치 권한 이유 시트**
 - **하단 시트**(`Sheets.kt`, Figma bottomsheetHeader): 청취 모드 · 제품 선택(모델) · 다크 모드 · 퍼센트 기준 = 체크 목록 / 진단 정보 = 본문 + [AACP 테스트] 링크 + [복사][닫기] / AACP 연결 테스트 = 실시간 로그 + [복사][닫기]. 이름 변경·페어링 안내·기기 목록은 기존 다이얼로그(보라 강조)
-- 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8. 디자인의 "에이팟 연결"은 오타로 보고 "에어팟 연결" 유지
+- 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8, 토글 44×26 알약(흰 원 · 보라/회색 트랙). 권한이 빠지면 회색 카드 1장([허용] → S-02). 디자인의 "에이팟 연결"은 오타로 보고 "에어팟 연결" 유지
+- **화면 캡처 확인**: `ScreenshotTest`(Robolectric NATIVE 렌더링)가 S-01·S-02·메인·시트·N-01을 `app/build/screens`에 PNG로 만들고 CI가 릴리스에 `screens.zip`으로 첨부 → `https://github.com/vividred2026/AOS-Pods/releases/download/latest/screens.zip`로 받아 Figma와 비교
+- CI 실패 원인은 주석(annotation)으로도 남김(이 환경은 Actions 로그 저장소 접근 불가) → `gh api repos/vividred2026/AOS-Pods/check-runs/<job id>/annotations`
 
 ### 메인 화면 구성 (위에서부터)
 1. **에어팟 연결 카드** (Figma `1170-719` 안의 `1215:2013` 연결 전 / `1215:1992` 연결 후, 회색 `#EAEAEA` 모서리 12)
