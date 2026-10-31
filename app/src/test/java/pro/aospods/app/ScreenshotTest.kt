@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
-/** 디자인 확인용 화면 캡처 (Robolectric 실제 렌더링). app/build/screens/*.png — CI가 릴리스에 첨부. */
+/** 디자인 확인용 화면 캡처 (Robolectric 실제 렌더링). app/build/screens 아래 PNG — CI가 릴리스에 첨부. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w375dp-h812dp-xhdpi")
