@@ -77,5 +77,27 @@ class ScreenshotTest {
         save(org.robolectric.shadows.ShadowDialog.getLatestDialog().window!!.decorView, "d08_privacy")
     }
 
+    /** 행 높이 점검용: 메인 화면 '알림으로 표시' 행과 자식들의 높이(dp)를 screens/layout.txt에 기록. */
+    @Test fun layoutDump() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        shadowOf(Looper.getMainLooper()).idle()
+        val d = a.resources.displayMetrics.density
+        val sw = a.findViewById<View>(R.id.swNotif)
+        val row = sw.parent as android.view.ViewGroup
+        val sb = StringBuilder()
+        fun dump(v: View, depth: Int) {
+            sb.append("  ".repeat(depth)).append(v.javaClass.simpleName)
+                .append(" h=").append(v.height / d).append(" minH=").append(v.minimumHeight / d)
+                .append(" pad=").append(v.paddingTop / d).append('/').append(v.paddingBottom / d)
+            (v.layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let {
+                sb.append(" m=").append(it.topMargin / d).append('/').append(it.bottomMargin / d)
+            }
+            sb.append('\n')
+            if (v is android.view.ViewGroup) for (i in 0 until v.childCount) dump(v.getChildAt(i), depth + 1)
+        }
+        dump(row, 0)
+        File(out, "layout.txt").writeText(sb.toString())
+    }
+
     @Test fun notifSettings() = shot(Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().get(), "n01_notif")
 }
