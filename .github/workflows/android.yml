@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,3 +36,23 @@ jobs:
           path: |
             app/build/reports/
             app/build/test-results/
+      - name: 테스트 결과 요약
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob, xml.etree.ElementTree as E
+          t = f = 0
+          for p in glob.glob('app/build/test-results/**/TEST-*.xml', recursive=True):
+              r = E.parse(p).getroot(); t += int(r.get('tests')); f += int(r.get('failures')) + int(r.get('errors'))
+          print(f"### 단위 테스트: {t}개 중 실패 {f}개")
+          PY
+      - name: 최신 APK를 릴리스로 게시 (main push)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk AosPods-debug.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest AosPods-debug.apk --prerelease \
+            --title "최신 디버그 빌드 (${GITHUB_SHA::7})" \
+            --notes "main 브랜치 최신 커밋 ${GITHUB_SHA::7}의 디버그 서명 APK입니다. 폰에서 내려받아 설치하세요."
