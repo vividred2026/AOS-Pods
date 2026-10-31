@@ -12,6 +12,8 @@ class AosApp : Application() {
         super.onCreate()
         // 다크 모드 설정을 어느 화면으로 시작하든 적용
         androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(Prefs(this).nightMode)
+        // AACP 소켓·HFP 배터리 조회에 필요한 블루투스 숨김 API 허용
+        HiddenApi.allowBluetooth()
         val def = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {

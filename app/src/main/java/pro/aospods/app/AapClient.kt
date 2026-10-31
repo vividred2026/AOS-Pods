@@ -95,6 +95,8 @@ class AapClient(
     /** 안드로이드 버전별 BluetoothSocket 숨김 생성자 시그니처를 차례로 시도. */
     @SuppressLint("DiscouragedPrivateApi", "SoonBlockedPrivateApi", "BlockedPrivateApi")
     private fun createSocket(): BluetoothSocket {
+        // 안드로이드 17+는 숨김 API 예외 없이는 생성자가 보이지 않음
+        if (!HiddenApi.allowBluetooth()) log("숨김 API 예외: ${HiddenApi.result}")
         val type = 3   // BluetoothSocket.TYPE_L2CAP
         val uuid = ParcelUuid.fromString(Aap.UUID)
         val i = Integer.TYPE
@@ -123,7 +125,9 @@ class AapClient(
         val available = BluetoothSocket::class.java.declaredConstructors.joinToString(" / ") { c ->
             c.parameterTypes.joinToString(",") { it.simpleName }
         }
-        throw IllegalStateException("맞는 생성자 없음 [${errors.joinToString()}] 사용 가능: $available")
+        throw IllegalStateException(
+            "맞는 생성자 없음 [${errors.joinToString()}] 숨김 API: ${HiddenApi.result} · 사용 가능: ${available.ifEmpty { "(안 보임)" }}"
+        )
     }
 
     private fun errText(e: Throwable): String {

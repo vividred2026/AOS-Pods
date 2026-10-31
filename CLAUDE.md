@@ -137,6 +137,8 @@ app/src/test/  — 단위 테스트 + Robolectric
   - 계속 0이면 → 루팅 없이 일반 앱으로는 불가(애플 전용 AAP 프로토콜 필요). 스위치에 "이 기기에서는 지원되지 않음" 표시로 정리
 - 🧪 **AACP 실험 추가** ([진단 정보] → [AACP 실험]): 에어팟과 클래식 L2CAP PSM `0x1001` 채널을 직접 열어 실시간 착용(`0x06`)·1% 배터리(`0x04`)를 받는지 확인 (`Aap.kt` 파서 · `AapClient.kt` 연결).
   - 소켓은 `BluetoothSocket` 숨김 생성자를 반사로 호출(버전별 시그니처 순차 시도). 연결 후 핸드셰이크 → 기능 플래그 → 알림 요청 순서로 전송.
+  - ⚠️ 실기기(삼성 SM-S937N, 안드로이드 17/SDK 37) 결과: **생성자 목록 자체가 비어 보임**(숨김 API 제한) → 5개 시그니처 모두 NoSuchMethod. LibrePods는 JNI로 `VMRuntime.setHiddenApiExemptions`를 호출해 우회함.
+  - → `HiddenApi.kt`: Apache 2.0 라이브러리 `org.lsposed.hiddenapibypass:hiddenapibypass:6.1`로 `Landroid/bluetooth/BluetoothSocket;`·`BluetoothDevice;`만 예외 등록(`AosApp.onCreate` + 소켓 생성 직전). `getBatteryLevel()` 조회도 같이 풀림. **구글 플레이 배포 불가(사이드로드 전용)** — `dependenciesInfo` 비포함 설정.
   - 참고 자료: pabloaul/apple-wireshark(AACP 해석기), LibrePods 문서(`docs/AAP Definitions.md`). **LibrePods는 GPLv3라 코드 복사 금지** — 프로토콜 사실만 참고해 직접 구현.
   - LibrePods 기준 루팅 없이 되는 기기: 안드로이드 17(SDK 37)+, 픽셀 16 QPR3, 원플러스·오포 16+. **삼성 16 이하는 미지원 목록** → 실험 결과로 판정.
   - 서비스가 에어팟 연결 시 자동으로 AACP 연결을 1회 시도(`AapSession`), 실패한 기기는 재연결 전까지 재시도 안 함. [AACP 실험] 화면은 이 세션 로그를 보여주고, 끊겨 있으면 강제 재시도.

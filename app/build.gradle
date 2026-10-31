@@ -13,6 +13,8 @@ android {
     versionName "1.0"
   }
   buildFeatures { viewBinding true }
+  // 숨김 API 우회 라이브러리 사용 정보는 APK에 넣지 않음(라이브러리 권장 설정)
+  dependenciesInfo { includeInApk = false; includeInBundle = false }
   testOptions { unitTests { includeAndroidResources = true } }
   compileOptions {
     sourceCompatibility JavaVersion.VERSION_17
@@ -44,4 +46,6 @@ dependencies {
   implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
   implementation 'androidx.lifecycle:lifecycle-service:2.8.4'
   implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+  // 블루투스 숨김 API(AACP 소켓·배터리 조회) 접근 — Apache 2.0
+  implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 }

@@ -439,7 +439,7 @@ class MainActivity : AppCompatActivity() {
         val hex = PodsRepo.lastRawHex
         val recent = synchronized(PodsRepo.recentRaw) { PodsRepo.recentRaw.toList() }
         val head = "연결: ${BtState.connectedName.value ?: "없음"} · HFP 배터리: ${BtState.hfpBattery.value?.let { "$it%" } ?: "없음"}\n" +
-            "배터리 경로: ${BtState.batteryNote}\n" +
+            "배터리 경로: ${BtState.batteryNote} · 숨김 API: ${HiddenApi.result}\n" +
             "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL}\n" +
             PodsRepo.diagLine + "\n\n"
         val text = head + if (hex.isEmpty()) {
