@@ -70,6 +70,8 @@ class ScanService : Service() {
     private var scanning = false
     /** 지금 스캔이 필터 없는 전체 스캔인지(화면 ON) / 애플 필터 스캔인지(화면 OFF). */
     private var scanAllMode = true
+    /** 지금 스캔 강도(ScanSettings.SCAN_MODE_*). */
+    private var scanMode = -1
     private var btReceiver: android.content.BroadcastReceiver? = null
     private var screenReceiver: android.content.BroadcastReceiver? = null
 
@@ -79,7 +81,10 @@ class ScanService : Service() {
             val now = System.currentTimeMillis()
             val types = typeCounts.entries.sortedByDescending { it.value }.take(5)
                 .joinToString(" ") { "%02X×%d".format(it.key, it.value) }
-            PodsRepo.diagLine = "진단(${if (scanAllMode) "전체 스캔·화면 ON" else "애플 필터·화면 OFF"}): " +
+            updateScan()   // 연결·전용 채널·화면 상태에 맞게 스캔 켜기/끄기/강도 조절
+            val scanState = if (!scanning) "스캔 쉬는 중(에어팟 미연결)" else
+                (if (scanAllMode) "전체 스캔" else "애플 필터") + "·" + scanModeName(scanMode)
+            PodsRepo.diagLine = "진단($scanState): " +
                 "BLE $cTotal · 애플 $cApple · 07 $c07 · 반영 $cPods" +
                 "\n유형: $types" +
                 (if (last07Hex.isNotEmpty()) "\n07: ${last07Hex.take(20)}…" else "")
@@ -231,10 +236,10 @@ class ScanService : Service() {
         val p = PodsRepo.pods.value
         if (p != null && p.hasAny && BtState.connectedName.value != null) showOrHidePopup(p)
         else if (!prefs.popup) overlay.hide()
-        startScan()
+        updateScan(announce = true)
         handler.removeCallbacks(diagTicker)
         handler.post(diagTicker)
-        handler.postDelayed({ syncAap() }, 1500)   // 연결 기기 조회(비동기) 후 AACP 연결
+        handler.postDelayed({ syncAap(); updateScan(announce = true) }, 1500)   // 연결 기기 조회(비동기) 후
         return START_STICKY
     }
 
@@ -245,7 +250,7 @@ class ScanService : Service() {
         val r = BtState.receiver { action, adapterState ->
             if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
                 when (adapterState) {
-                    BluetoothAdapter.STATE_ON -> startScan()   // 블루투스를 다시 켜면 스캔 재시작
+                    BluetoothAdapter.STATE_ON -> updateScan()   // 블루투스를 다시 켜면 스캔 재개
                     BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF -> {
                         stopScan(); overlay.hide()
                     }
@@ -259,6 +264,7 @@ class ScanService : Service() {
                 // 연결 중이면 BLE 상세값이 없을 때 HFP 전체 배터리로, 끊기면 끊김 상태로 알림 갱신
                 notifyCurrent()
                 syncAap()
+                updateScan()   // 연결되면 스캔 시작, 끊기면 스캔 중지(배터리 절약)
                 OnOffTileService.refresh(this)
             }, 800)   // 프로파일 조회(비동기) 결과 반영 대기
         }
@@ -271,7 +277,7 @@ class ScanService : Service() {
         if (screenReceiver != null) return
         val r = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
-                if (scanning && scanAllMode != isScreenOn()) { stopScan(); startScan() }
+                updateScan()
             }
         }
         screenReceiver = r
@@ -284,22 +290,50 @@ class ScanService : Service() {
     private fun isScreenOn(): Boolean =
         try { getSystemService(android.os.PowerManager::class.java).isInteractive } catch (_: Exception) { true }
 
+    /** 지금 필요한 스캔 강도. null = 스캔하지 않음.
+     *  - 에어팟 미연결: 스캔 안 함 — 연결돼 있을 때만 BLE 값을 쓰므로(남의 에어팟 섞임 방지) 돌릴 이유가 없음
+     *  - 전용 채널(AACP) 연결: 착용·배터리를 직접 받으므로 BLE는 보조 → 저전력
+     *  - 화면 OFF: 저전력 / 화면 ON(케이스를 열어 바로 봐야 함): 빠른 스캔 */
+    private fun desiredScanMode(): Int? = when {
+        BtState.connectedName.value == null -> null
+        AapSession.connected.value -> ScanSettings.SCAN_MODE_LOW_POWER
+        !isScreenOn() -> ScanSettings.SCAN_MODE_LOW_POWER
+        else -> ScanSettings.SCAN_MODE_LOW_LATENCY
+    }
+
+    /** 상태가 바뀐 경우에만 스캔을 시작·중지·재시작(잦은 재시작은 OS가 막으므로 변화가 있을 때만). */
+    private fun updateScan(announce: Boolean = false) {
+        val want = desiredScanMode()
+        if (want == null) { if (scanning) stopScan(); return }
+        if (scanning && want == scanMode && scanAllMode == isScreenOn()) return
+        if (scanning) stopScan()
+        startScan(want, announce)
+    }
+
+    private fun scanModeName(m: Int) = when (m) {
+        ScanSettings.SCAN_MODE_LOW_LATENCY -> "빠름"
+        ScanSettings.SCAN_MODE_BALANCED -> "보통"
+        ScanSettings.SCAN_MODE_LOW_POWER -> "저전력"
+        else -> "?"
+    }
+
+    /** announce = true일 때만 안내 문구를 띄움(주기적 재확인 때 같은 안내가 반복되지 않게). */
     @SuppressLint("MissingPermission")
-    private fun startScan() {
-        if (scanning) return   // 이미 스캔 중이면 재시작하지 않음(카운터·값 유지, 잦은 재시작 방지)
+    private fun startScan(mode: Int, announce: Boolean) {
+        if (scanning) return
         if (!Perms.ok(this)) {
-            PodsRepo.status.value = "권한이 없어 에어팟을 찾을 수 없어요 — 앱에서 권한을 허용해 주세요"
+            if (announce) PodsRepo.status.value = "권한이 없어 에어팟을 찾을 수 없어요 — 앱에서 권한을 허용해 주세요"
             return
         }
         val bt = getSystemService(BluetoothManager::class.java)?.adapter
         if (bt == null || !bt.isEnabled) {
             // 가짜 값을 보여주지 않고, 블루투스를 켜라고 안내만 함. 켜지면 리시버가 다시 시작
-            PodsRepo.status.value = "블루투스가 꺼져 있어요 — 켜면 에어팟을 찾습니다"
+            if (announce) PodsRepo.status.value = "블루투스가 꺼져 있어요 — 켜면 에어팟을 찾습니다"
             overlay.hide()
             return
         }
         // 30 이하는 위치 서비스가 꺼져 있으면 BLE 스캔 결과가 오지 않음 — 안내
-        if (Build.VERSION.SDK_INT < 31 && !locationEnabled()) {
+        if (announce && Build.VERSION.SDK_INT < 31 && !locationEnabled()) {
             PodsRepo.status.value = "위치 서비스가 꺼져 있으면 에어팟을 못 찾을 수 있어요(설정 > 위치 ON)"
         }
         scanner = bt.bluetoothLeScanner
@@ -312,14 +346,15 @@ class ScanService : Service() {
         val filters = if (scanAllMode) null else listOf(
             ScanFilter.Builder().setManufacturerData(AirPodsParser.appleId(), byteArrayOf()).build()
         )
+        scanMode = mode
         val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setScanMode(mode)
             .setReportDelay(0L).build()
         try {
             val s = scanner ?: run { PodsRepo.status.value = "BLE 스캐너를 사용할 수 없어요"; return }
             s.startScan(filters, settings, callback)
             scanning = true
-            PodsRepo.status.value = "에어팟 검색 중… 케이스 뚜껑을 열어주세요"
+            if (announce) PodsRepo.status.value = "에어팟 검색 중… 케이스 뚜껑을 열어주세요"
         } catch (e: Exception) {
             PodsRepo.status.value = "스캔 시작 실패: ${e.message}"
         }
