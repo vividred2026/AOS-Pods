@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="40dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AosPods"
+            android:textColor="@color/ink"
+            android:textSize="28sp"
+            android:textStyle="bold"/>
+
+        <!-- 권한 안내 (P-01) -->
+        <LinearLayout
+            android:id="@+id/permCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_bg"
+            android:padding="20dp"
+            android:layout_marginTop="20dp"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="앱이 정상적으로 동작하려면 아래 권한을 허용해 주세요."
+                android:textColor="@color/ink"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+            <Button
+                android:id="@+id/btnPermOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="14dp"
+                android:text="다른 앱 위에 표시"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_orange"
+                android:stateListAnimator="@null"/>
+            <Button
+                android:id="@+id/btnPermLoc"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:text="위치"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_orange"
+                android:stateListAnimator="@null"/>
+            <Button
+                android:id="@+id/btnPermBt"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:text="블루투스"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_orange"
+                android:stateListAnimator="@null"/>
+            <Button
+                android:id="@+id/btnPermNotif"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:text="알림"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_orange"
+                android:stateListAnimator="@null"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="이미 허용된 권한의 버튼은 사라집니다."
+                android:textColor="@color/muted"
+                android:textSize="12sp"/>
+        </LinearLayout>
+
+        <!-- 설정 리스트 (M-00) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_bg"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="4dp"
+            android:layout_marginTop="20dp">
+
+            <!-- 에어팟 연결 (페어링) -->
+            <LinearLayout android:id="@+id/rowPair" style="@style/Row"
+                android:clickable="true" android:focusable="true">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="에어팟 연결"/>
+                    <TextView android:id="@+id/pairStatus" style="@style/RowSub"
+                        android:text="연결 안 됨"/>
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/btnPair"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:paddingHorizontal="14dp"
+                    android:background="@drawable/btn_orange"
+                    android:text="연결하기"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <!-- 서비스 활성화 -->
+            <LinearLayout style="@style/Row">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="서비스 활성화"/>
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swService" style="@style/RowSwitch"/>
+            </LinearLayout>
+
+            <!-- 모델 -->
+            <LinearLayout android:id="@+id/rowModel" style="@style/Row"
+                android:clickable="true" android:focusable="true">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="모델"/>
+                    <TextView android:id="@+id/modelValue" style="@style/RowSub" android:text="에어팟 4"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+            </LinearLayout>
+
+            <!-- 배터리 표시 -->
+            <TextView style="@style/Category" android:text="배터리 표시"/>
+
+            <LinearLayout style="@style/Row">
+                <LinearLayout android:id="@+id/textNotif" style="@style/RowTextTap">
+                    <TextView style="@style/RowTitle" android:text="알림으로 표시"/>
+                    <TextView style="@style/RowSub" android:text="탭하면 알림 설정 · 스위치로 ON/OFF"/>
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swNotif" style="@style/RowSwitch"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/Row">
+                <LinearLayout android:id="@+id/textPercent" style="@style/RowTextTap">
+                    <TextView style="@style/RowTitle" android:text="알림 아이콘에 퍼센트 표시"/>
+                    <TextView style="@style/RowSub" android:text="탭하면 아이콘 퍼센트 설정"/>
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swPercent" style="@style/RowSwitch"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/Row">
+                <LinearLayout android:id="@+id/textPopup" style="@style/RowTextTap">
+                    <TextView style="@style/RowTitle" android:text="팝업 창으로 표시"/>
+                    <TextView style="@style/RowSub" android:text="탭하면 팝업 설정 · 스위치로 ON/OFF"/>
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swPopup" style="@style/RowSwitch"/>
+            </LinearLayout>
+
+            <!-- 착용 감지 (STEP 3 · 오디오 포커스) -->
+            <TextView style="@style/Category" android:text="착용 감지"/>
+
+            <LinearLayout style="@style/Row">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="일시정지"/>
+                    <TextView style="@style/RowSub" android:text="AirPods를 빼면 재생 일시정지"/>
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swPause" style="@style/RowSwitch"/>
+            </LinearLayout>
+
+            <LinearLayout style="@style/Row">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="다시 재생"/>
+                    <TextView style="@style/RowSub" android:text="AirPods를 다시 끼면 재생 재개"/>
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swResume" style="@style/RowSwitch"/>
+            </LinearLayout>
+
+            <!-- 정보 -->
+            <TextView style="@style/Category" android:text="정보"/>
+
+            <LinearLayout android:id="@+id/rowNight" style="@style/Row"
+                android:clickable="true" android:focusable="true">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="다크 모드"/>
+                    <TextView android:id="@+id/nightValue" style="@style/RowSub" android:text="시스템 기본값"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/rowDiag" style="@style/Row"
+                android:clickable="true" android:focusable="true">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="진단 정보"/>
+                    <TextView style="@style/RowSub" android:text="마지막 에어팟 신호 원문 · 해석값 확인/복사"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/rowPrivacy" style="@style/Row"
+                android:clickable="true" android:focusable="true">
+                <LinearLayout style="@style/RowText">
+                    <TextView style="@style/RowTitle" android:text="개인정보처리방침"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="center_horizontal"
+            android:text="AosPods · 미니멀 버전"
+            android:textColor="@color/muted"
+            android:textSize="12sp"/>
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="orange">#FFFF7A00</color>
+    <color name="orange_bg">#FFFFF1E6</color>
+    <color name="ink">#FF2B2B2B</color>
+    <color name="sub">#FF6B6B6B</color>
+    <color name="muted">#FF8C8C8C</color>
+    <color name="line">#FFE4E4E1</color>
+    <color name="bg">#FFF4F5F7</color>
+    <color name="card">#FFFFFFFF</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="track">#FFE4E4E1</color>
+    <color name="green">#FF30A46C</color>
+    <color name="chip_bg">#FF6E6E73</color>
+</resources>

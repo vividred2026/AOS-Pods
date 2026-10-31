@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/sheet_bg"
+    android:paddingTop="12dp"
+    android:paddingBottom="28dp"
+    android:paddingHorizontal="20dp">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/grabber"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp">
+        <TextView
+            android:id="@+id/sheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="AirPods"
+            android:textColor="@color/ink"
+            android:textSize="22sp"
+            android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/sheetClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center_vertical|end"
+            android:text="✕"
+            android:gravity="center"
+            android:textColor="@color/muted"
+            android:textSize="18sp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="닫기"/>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dp">
+        <include layout="@layout/pod_item" android:id="@+id/sheetLeft"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <include layout="@layout/pod_item" android:id="@+id/sheetRight"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <include layout="@layout/pod_item" android:id="@+id/sheetCase"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/bg">
+    <include android:id="@+id/appbar" layout="@layout/appbar"/>
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_bg"
+                android:paddingVertical="8dp" android:paddingHorizontal="4dp">
+                <LinearLayout android:id="@+id/rowType" style="@style/Row"
+                    android:clickable="true" android:focusable="true">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="표시할 퍼센트 기준"/>
+                        <TextView android:id="@+id/typeValue" style="@style/RowSub" android:text="가장 닳은 기기 (케이스 포함)"/>
+                    </LinearLayout>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+                </LinearLayout>
+                <View style="@style/Divider"/>
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="연결이 끊겨도 표시"/>
+                        <TextView style="@style/RowSub" android:text="마지막으로 확인된 배터리 유지"/>
+                    </LinearLayout>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/swDisconnected" style="@style/RowSwitch"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

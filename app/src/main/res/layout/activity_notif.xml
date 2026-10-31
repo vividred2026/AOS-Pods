@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/bg">
+    <include android:id="@+id/appbar" layout="@layout/appbar"/>
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_bg"
+                android:paddingVertical="8dp" android:paddingHorizontal="4dp">
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="큰 알림"/>
+                        <TextView style="@style/RowSub" android:text="배터리 세 개를 각각 펼쳐 표시"/>
+                    </LinearLayout>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/swBig" style="@style/RowSwitch"/>
+                </LinearLayout>
+                <View style="@style/Divider"/>
+                <LinearLayout style="@style/Row">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="작은 알림"/>
+                        <TextView style="@style/RowSub" android:text="켜면 내용 없이 간단히 표시"/>
+                    </LinearLayout>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/swSmall" style="@style/RowSwitch"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
