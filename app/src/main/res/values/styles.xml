@@ -36,8 +36,12 @@
         <item name="android:focusable">true</item>
         <!-- 디자인 토글: 보라 트랙 + 흰 원 -->
         <item name="useMaterialThemeColors">false</item>
+        <item name="android:thumb">@drawable/switch_thumb_shape</item>
+        <item name="track">@drawable/switch_track_shape</item>
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track</item>
+        <item name="switchMinWidth">44dp</item>
+        <item name="android:background">@null</item>
     </style>
     <style name="Divider">
         <item name="android:layout_width">match_parent</item>

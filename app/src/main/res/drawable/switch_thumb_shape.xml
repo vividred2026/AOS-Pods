@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 디자인 토글 원: 22dp 흰 원 + 2dp 여백 (전체 26dp) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFFFF"/>
+            <size android:width="22dp" android:height="22dp"/>
+        </shape>
+    </item>
+</layer-list>

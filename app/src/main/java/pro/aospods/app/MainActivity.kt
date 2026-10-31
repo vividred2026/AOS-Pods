@@ -51,10 +51,6 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("닫기", null).show()
     }
 
-    private val overlayLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { refreshPermissionUi() }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
@@ -137,10 +133,9 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
         }
-        b.btnPermLoc.setOnClickListener { requestRuntimePerms() }
-        b.btnPermBt.setOnClickListener { requestRuntimePerms() }
-        b.btnPermNotif.setOnClickListener { requestRuntimePerms() }
-        b.btnPermOverlay.setOnClickListener { requestOverlay() }
+        // 빠진 권한 → S-02 접근 권한 안내 화면(권한별 사유 · 요청)
+        b.permCard.setOnClickListener { open(PermissionActivity::class.java) }
+        b.btnPermFix.setOnClickListener { open(PermissionActivity::class.java) }
 
         showCrashIfAny()
 
@@ -245,14 +240,6 @@ class MainActivity : AppCompatActivity() {
     private fun canOverlay() =
         if (Build.VERSION.SDK_INT >= 23) Settings.canDrawOverlays(this) else true
 
-    private fun requestOverlay() {
-        overlayLauncher.launch(
-            Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-        )
-    }
 
     private fun refreshPermissionUi() {
         val missing = missingRuntime()
@@ -265,10 +252,10 @@ class MainActivity : AppCompatActivity() {
         val notifMissing = missing.contains(Manifest.permission.POST_NOTIFICATIONS)
         // "다른 앱 위에 표시"는 팝업 기능을 켠 경우에만 요청
         val overlayMissing = prefs.popup && !canOverlay()
-        b.btnPermOverlay.visibility = if (overlayMissing) View.VISIBLE else View.GONE
-        b.btnPermLoc.visibility = if (locMissing) View.VISIBLE else View.GONE
-        b.btnPermBt.visibility = if (btMissing) View.VISIBLE else View.GONE
-        b.btnPermNotif.visibility = if (notifMissing) View.VISIBLE else View.GONE
+        b.permMissing.text = listOfNotNull(
+            "다른 앱 위에 표시".takeIf { overlayMissing }, "위치".takeIf { locMissing },
+            "블루투스".takeIf { btMissing }, "알림".takeIf { notifMissing },
+        ).joinToString(" · ") + " | 눌러서 허용"
         b.permCard.visibility =
             if (locMissing || btMissing || notifMissing || overlayMissing)
                 View.VISIBLE else View.GONE
