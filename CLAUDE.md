@@ -204,7 +204,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 - STEP 4 탭 제스처(어시스턴트·단축 통화) — 사용자 요청으로 **제거**
 - STEP 6 평가 다이얼로그 — 비핵심이라 제외
 - O-02 알림의 L/R/K 칩 디자인(커스텀 RemoteViews) — 미적용 (팝업만 반영)
-- ✅ **O-01 팝업 = Figma `1216:5587`**(2026-10-31): 손잡이 50×4 · 이름 18 Bold + 모델 14 회색 · ✕(`ic_close`) · 왼쪽/오른쪽 = 보라 칩 56(모서리 16) 안에 이어버드 사진(`drawable-xxhdpi/bud_left/right.png`, Figma 래스터 3배 내보내기 28×46dp) · 케이스 = "C" 40 Bold · 라벨 12 · 퍼센트 16 Bold · 막대 56×6 보라(`pod_progress`). 캡처 `o01_popup.png`
+- ✅ **O-01 팝업 = Figma `1216:5587`**(2026-10-31): 손잡이 50×4 · 이름 18 Bold + 모델 14 회색 · ✕(`ic_close`) · 왼쪽/오른쪽 = 보라 칩 56(모서리 16) 안에 이어버드 사진(`drawable-xxhdpi/bud_left.png`(Figma 래스터 3배 내보내기, 28×46dp) — 오른쪽은 같은 그림을 `scaleX=-1`로 반전(Figma의 오른쪽 PNG는 전송 중 깨져 쓰지 않음)) · 케이스 = "C" 40 Bold · 라벨 12 · 퍼센트 16 Bold · 막대 56×6 보라(`pod_progress`). 캡처 `o01_popup.png`
 
 ---
 

@@ -91,7 +91,8 @@ class PodsOverlay(private val ctx: Context) {
 
         // Figma 1216:5587: 왼쪽·오른쪽 = 이어버드 사진, 케이스 = "C" 글자
         binding.sheetLeft.podIcon.setImageResource(R.drawable.bud_left)
-        binding.sheetRight.podIcon.setImageResource(R.drawable.bud_right)
+        binding.sheetRight.podIcon.setImageResource(R.drawable.bud_left)
+        binding.sheetRight.podIcon.scaleX = -1f   // 오른쪽 = 왼쪽 사진의 거울상
         binding.sheetLeft.podIcon.visibility = View.VISIBLE
         binding.sheetLeft.podLetter.visibility = View.GONE
         binding.sheetRight.podIcon.visibility = View.VISIBLE
