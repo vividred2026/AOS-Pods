@@ -459,12 +459,6 @@ class MainActivity : AppCompatActivity() {
         }
         AlertDialog.Builder(this).setTitle("진단 정보").setMessage(text)
             .setPositiveButton("닫기", null)
-            .setNegativeButton(if (prefs.scanAll) "애플 필터 스캔으로" else "전체 스캔으로") { _, _ ->
-                // 실기기 비교용: 필터 방식과 전체 스캔 방식의 07 수신 차이 확인
-                prefs.scanAll = !prefs.scanAll
-                applyNow()
-                toast(if (prefs.scanAll) "전체 스캔(진단) — 화면이 꺼지면 멈출 수 있어요" else "애플 필터 스캔")
-            }
             .setNeutralButton("복사") { _, _ ->
                 val cm = getSystemService(android.content.ClipboardManager::class.java)
                 cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods", text))

@@ -68,8 +68,10 @@ class ScanService : Service() {
     private var connectedSince = 0L
 
     private var scanning = false
-    private var scanAllMode = false
+    /** 지금 스캔이 필터 없는 전체 스캔인지(화면 ON) / 애플 필터 스캔인지(화면 OFF). */
+    private var scanAllMode = true
     private var btReceiver: android.content.BroadcastReceiver? = null
+    private var screenReceiver: android.content.BroadcastReceiver? = null
 
     /** 5초마다 진단 문구와 '착용 신호 수신 여부'를 갱신. */
     private val diagTicker = object : Runnable {
@@ -77,7 +79,7 @@ class ScanService : Service() {
             val now = System.currentTimeMillis()
             val types = typeCounts.entries.sortedByDescending { it.value }.take(5)
                 .joinToString(" ") { "%02X×%d".format(it.key, it.value) }
-            PodsRepo.diagLine = "진단(${if (scanAllMode) "전체 스캔" else "애플 필터"}): " +
+            PodsRepo.diagLine = "진단(${if (scanAllMode) "전체 스캔·화면 ON" else "애플 필터·화면 OFF"}): " +
                 "BLE $cTotal · 애플 $cApple · 07 $c07 · 반영 $cPods" +
                 "\n유형: $types" +
                 (if (last07Hex.isNotEmpty()) "\n07: ${last07Hex.take(20)}…" else "")
@@ -216,12 +218,11 @@ class ScanService : Service() {
         PodsRepo.error.value = null
         PodsRepo.running.value = true
         registerBt()
+        registerScreen()
         // 설정 변경(팝업 ON/OFF·여백 등)을 이미 떠 있는 팝업에 즉시 반영
         val p = PodsRepo.pods.value
         if (p != null && p.hasAny && BtState.connectedName.value != null) showOrHidePopup(p)
         else if (!prefs.popup) overlay.hide()
-        // 진단 화면에서 스캔 방식을 바꾼 경우 다시 시작
-        if (scanning && scanAllMode != prefs.scanAll) stopScan()
         startScan()
         handler.removeCallbacks(diagTicker)
         handler.post(diagTicker)
@@ -255,6 +256,24 @@ class ScanService : Service() {
         ContextCompat.registerReceiver(this, r, BtState.filter, ContextCompat.RECEIVER_EXPORTED)
     }
 
+    /** 화면 ON/OFF에 따라 스캔 방식을 바꿔 다시 시작. */
+    private fun registerScreen() {
+        if (screenReceiver != null) return
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context, i: Intent) {
+                if (scanning && scanAllMode != isScreenOn()) { stopScan(); startScan() }
+            }
+        }
+        screenReceiver = r
+        val f = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        ContextCompat.registerReceiver(this, r, f, ContextCompat.RECEIVER_NOT_EXPORTED)
+    }
+
+    private fun isScreenOn(): Boolean =
+        try { getSystemService(android.os.PowerManager::class.java).isInteractive } catch (_: Exception) { true }
+
     @SuppressLint("MissingPermission")
     private fun startScan() {
         if (scanning) return   // 이미 스캔 중이면 재시작하지 않음(카운터·값 유지, 잦은 재시작 방지)
@@ -276,9 +295,10 @@ class ScanService : Service() {
         scanner = bt.bluetoothLeScanner
         cTotal = 0; cApple = 0; cPods = 0
         c07 = 0; last07Hex = ""; typeCounts.clear()
-        scanAllMode = prefs.scanAll
-        // 기본: 애플 제조사(0x4C) 필터 — 데이터 조건 없이 회사 ID만 거르므로 이어붙은 메시지도 모두 받음.
-        // 필터가 있어야 화면이 꺼져도 스캔이 계속됨(안드로이드 8.1+는 필터 없는 스캔을 화면 OFF 시 중단).
+        // 화면 ON: 필터 없는 전체 스캔 — 실기기에서 0x07 수신이 확인된 방식.
+        //   (회사 ID만 거는 빈 데이터 필터는 일부 폰(삼성 등)의 하드웨어 필터에서 아무것도 안 걸러져 배터리를 못 받음)
+        // 화면 OFF: 안드로이드 8.1+는 필터 없는 스캔을 멈추므로, 그때만 애플 회사 ID 필터로 시도(보조).
+        scanAllMode = isScreenOn()
         val filters = if (scanAllMode) null else listOf(
             ScanFilter.Builder().setManufacturerData(AirPodsParser.appleId(), byteArrayOf()).build()
         )
@@ -315,6 +335,8 @@ class ScanService : Service() {
         PodsRepo.wearSignal.value = null
         btReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
         btReceiver = null
+        screenReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+        screenReceiver = null
         handler.removeCallbacksAndMessages(null)
         abandonResume()   // 보유 중인 오디오 포커스 반환
         overlay.hide()
