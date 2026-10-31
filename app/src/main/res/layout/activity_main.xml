@@ -104,7 +104,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="에어팟 연결"
+                            android:text="에어팟 자유 쟁취"
                             android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:fontFamily="@font/pretendard_bold"
@@ -154,7 +154,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="에어팟 연결"
+                            android:text="자유를 얻은 에어팟"
                             android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:fontFamily="@font/pretendard_bold"

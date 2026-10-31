@@ -6,7 +6,7 @@
         <item name="android:orientation">horizontal</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:paddingHorizontal">16dp</item>
-        <item name="android:paddingVertical">14dp</item>
+        <item name="android:paddingVertical">12dp</item>
         <item name="android:background">?attr/selectableItemBackground</item>
     </style>
     <style name="RowText">
@@ -47,6 +47,8 @@
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track</item>
         <item name="switchMinWidth">44dp</item>
+        <!-- 머티리얼 기본 최소 높이 48dp를 없애 행 높이를 Figma(제목+요약 64 · 제목만 50)에 맞춤 -->
+        <item name="android:minHeight">0dp</item>
         <item name="android:background">@null</item>
     </style>
     <style name="Divider">
