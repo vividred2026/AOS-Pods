@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity() {
         b.permMissing.text = listOfNotNull(
             "다른 앱 위에 표시".takeIf { overlayMissing }, "위치".takeIf { locMissing },
             "블루투스".takeIf { btMissing }, "알림".takeIf { notifMissing },
-        ).joinToString(" · ") + " | 눌러서 허용"
+        ).joinToString(" · ")
         b.permCard.visibility =
             if (locMissing || btMissing || notifMissing || overlayMissing)
                 View.VISIBLE else View.GONE
