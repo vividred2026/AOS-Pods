@@ -99,5 +99,22 @@ class ScreenshotTest {
         File(out, "layout.txt").writeText(sb.toString())
     }
 
+    /** O-01 배터리 팝업(Figma 1216:5587) — 오버레이 권한 없이 레이아웃만 inflate해 묶기. */
+    @Test fun popupSheet() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        BtState.connectedName.value = "Kris"
+        val overlay = PodsOverlay(a)
+        val b = pro.aospods.app.databinding.SheetPodsBinding.inflate(a.layoutInflater)
+        PodsOverlay::class.java.getDeclaredMethod("bind",
+            pro.aospods.app.databinding.SheetPodsBinding::class.java, Pods::class.java, Prefs::class.java)
+            .apply { isAccessible = true }
+            .invoke(overlay, b, Pods("에어팟 4", 85, 85, 55, false, false, true, false, false), Prefs(a))
+        val w = (375 * a.resources.displayMetrics.density).toInt()
+        b.root.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+        b.root.layout(0, 0, b.root.measuredWidth, b.root.measuredHeight)
+        save(b.root, "o01_popup")
+        BtState.connectedName.value = null
+    }
+
     @Test fun notifSettings() = shot(Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().get(), "n01_notif")
 }

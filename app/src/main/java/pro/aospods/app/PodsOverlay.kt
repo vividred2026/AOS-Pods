@@ -77,6 +77,8 @@ class PodsOverlay(private val ctx: Context) {
         val title = prefs.popupTitle.ifBlank { BtState.connectedName.value ?: p.model }
         binding.sheetTitle.text = title
         binding.sheetTitle.textSize = prefs.popupTitleSize.toFloat()
+        // 이름 옆 회색 모델(Figma "Kris   AirPods 4") — 제목이 모델명과 같으면 생략
+        binding.sheetModel.text = p.model.takeIf { it != title } ?: ""
         // 모서리 둥글기 · 여백 적용
         (binding.root.background?.mutate() as? GradientDrawable)?.cornerRadius = dp(prefs.popupCorner).toFloat()
 
@@ -87,7 +89,9 @@ class PodsOverlay(private val ctx: Context) {
         bindPod(binding.sheetCase.podLabel, binding.sheetCase.podPct, binding.sheetCase.podBar,
             "케이스", p.case, p.caseCharging)
 
-        // 변경된 UI: L·R = 이어버드 아이콘, 케이스 = "K" 글자
+        // Figma 1216:5587: 왼쪽·오른쪽 = 이어버드 사진, 케이스 = "C" 글자
+        binding.sheetLeft.podIcon.setImageResource(R.drawable.bud_left)
+        binding.sheetRight.podIcon.setImageResource(R.drawable.bud_right)
         binding.sheetLeft.podIcon.visibility = View.VISIBLE
         binding.sheetLeft.podLetter.visibility = View.GONE
         binding.sheetRight.podIcon.visibility = View.VISIBLE

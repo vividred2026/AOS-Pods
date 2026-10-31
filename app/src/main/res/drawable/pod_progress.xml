@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 팝업 배터리 막대 (Figma WF/PopupPod Bar): 56×6 · 모서리 3 · 트랙 회색 · 진행 보라 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="3dp"/>
+            <solid android:color="@color/track"/>
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="3dp"/>
+                <solid android:color="@color/accent"/>
+            </shape>
+        </clip>
+    </item>
+</layer-list>

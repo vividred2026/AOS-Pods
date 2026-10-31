@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 팝업 배터리 한 칸 (Figma WF/PopupPod 1230:3095): 보라 칩 56(모서리 16) + 이어버드 사진 28×46 / 케이스 "C" 40 Bold
+     · 라벨 12 · 퍼센트 16 Bold · 막대 56×6 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -6,27 +8,28 @@
     android:gravity="center_horizontal"
     android:paddingHorizontal="4dp">
 
-    <!-- 어두운 칩 + 흰색 아이콘(L·R) 또는 글자(K) -->
     <FrameLayout
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:background="@drawable/pod_chip">
         <ImageView
             android:id="@+id/podIcon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="28dp"
+            android:layout_height="46dp"
             android:layout_gravity="center"
-            android:src="@drawable/ic_earbud"
+            android:scaleType="fitCenter"
+            android:src="@drawable/bud_left"
             android:contentDescription="@null"/>
         <TextView
             android:id="@+id/podLetter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="K"
+            android:text="C"
             android:textColor="@color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"
+            android:textSize="40sp"
+            android:includeFontPadding="false"
+            android:fontFamily="@font/pretendard_bold"
             android:visibility="gone"/>
     </FrameLayout>
 
@@ -37,16 +40,17 @@
         android:layout_marginTop="8dp"
         android:text="왼쪽"
         android:textColor="@color/sub"
-        android:textSize="12sp"/>
+        android:textSize="12sp"
+        android:lineHeight="18sp"/>
     <TextView
         android:id="@+id/podPct"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
         android:text="--"
         android:textColor="@color/ink"
         android:textSize="16sp"
-        android:textStyle="bold"/>
+        android:lineHeight="24sp"
+        android:fontFamily="@font/pretendard_bold"/>
     <ProgressBar
         android:id="@+id/podBar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -55,6 +59,5 @@
         android:layout_marginTop="6dp"
         android:max="100"
         android:progress="0"
-        android:progressTint="@color/green"
-        android:progressBackgroundTint="@color/track"/>
+        android:progressDrawable="@drawable/pod_progress"/>
 </LinearLayout>
