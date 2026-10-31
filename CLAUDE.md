@@ -31,6 +31,7 @@
   - 추가 컴포넌트(섹션 `00 Components`): `WF/PairCard`(State=연결 전/후 · Status/Name/Model) · `WF/PodChip`(Letter/Pct) · `WF/ChoiceRow`(Selected · Label) · `WF/DialogButton`(Label) · `WF/PopupPod`(Kind=Bud/Case · Label/Pct). 기존 `WF/PrefRow`·`WF/PrefCategory`·`WF/SeekRow`·`WF/StatusBar`·`WF/Toggle` 재사용
   - 앱 UI를 바꾸면 이 섹션도 함께 갱신할 것
 - **보라 테마 화면(같은 페이지, y≈5901 줄)**: 앱 문구와 일치하도록 정리함(2026-10-31) — S-01 `1216:3004` · S-02 `1216:3249` · 위치 시트 `1216:3451` · 메인 `1216:3535`(정보에 "진단 정보" 행 추가) · 제품 선택 `1216:5011`(파워비츠 프로 추가) · 진단 `1216:5169` · AACP `1216:5303` 등
+  - 사용자 디자인(앱 적용 완료): 페어링 시트 `1230:2253` · 기기 목록 시트 `1230:2480`. 아래 `1233:*`는 이전 다이얼로그 버전
   - 새로 추가: **D-01 페어링 모드 안내 `1233:2468`** · **D-02 에어팟 검색 목록 `1233:2625`**(🎧/🔈/· + "(페어링됨)", MAC 주소 없음) — 문구는 `MainActivity.pairGuide`/`startOwnDiscovery`와 같게 유지
 
 ---
@@ -97,7 +98,7 @@ app/src/test/  — 단위 테스트 + Robolectric
   - ⚠️ 테마에는 `android:fontFamily`만 둘 것. `app:fontFamily`(AppCompat)를 테마에 넣으면 뷰별 `android:fontFamily="@font/pretendard_bold"` 등이 무시돼 모든 굵기가 Regular로 보임(실제로 겪음)
 - 로고·아이콘은 Figma 노드를 `exportAsync(SVG)`로 받아 VectorDrawable로 변환(`logo_bar` 메인 앱바 · `logo_perm` S-02 · `logo_splash`/`logo_befree` S-01 · `ic_check_box_*` · `ic_check_circle_*` · `ic_close`). figma.com 에셋 URL은 이 환경에서 막혀 있음
 - **S-01 스플래시**(`SplashActivity`, 런처, 1.2초) → 처음이면 **S-02 접근 권한 안내**(`PermissionActivity`: 체크=허용됨, 줄 탭=그 권한만 요청, [동의합니다]=전부 요청 → 다른 앱 위에 표시 → 메인, [나중에 설정하기]) → 메인. 위치(11 이하)는 먼저 **위치 권한 이유 시트**
-- **하단 시트**(`Sheets.kt`, Figma bottomsheetHeader): 청취 모드 · 제품 선택(모델) · 다크 모드 · 퍼센트 기준 = 체크 목록 / 진단 정보 = 본문 + [AACP 테스트] 링크 + [복사][닫기] / AACP 연결 테스트 = 실시간 로그 + [복사][닫기]. 이름 변경·페어링 안내·기기 목록은 기존 다이얼로그(보라 강조)
+- **하단 시트**(`Sheets.kt`, Figma bottomsheetHeader): 청취 모드 · 제품 선택(모델) · 다크 모드 · 퍼센트 기준 = 체크 목록 / 진단 정보 = 본문 + [AACP 테스트] 링크 + [복사][닫기] / AACP 연결 테스트 = 실시간 로그 + [복사][닫기]. 페어링 안내(Figma `1230:2253`)·기기 목록(`1230:2480`) = 시트 "에어팟 페어링모드" + [블루투스 설정] 링크 + [취소][다음]/[취소][다시 검색], 목록 위 "연결할 에어팟을 선택하세요.   +N"(N=발견 수, 보라). 이름 변경은 기존 다이얼로그(보라 강조)
 - **글자 크기(Figma `1216:3535` 기준)**: 행 제목 15 Medium(행간 20, 자간 -0.2) · 요약 13 Regular(행간 18) · 카테고리 14 Bold · 연결 카드 제목 16 Bold(행간 24) · 상태 13 · 이름-모델 14 Bold · R/L/C % 16 Bold · 칩 글자 18 Black · 앱바 로고 101×46(Figma `1216:3704`: 새 로고 배치 — AOS·이어버드·ODS, 위 16 · 왼쪽 16 · 아래 0). 디자인은 메인 목록에 Spoqa Han Sans Neo를 쓰지만 앱은 Pretendard로 통일(크기·굵기·행간·자간만 맞춤)
 - **로고 색**: `@color/logo` — 라이트 = 보라 `#5D22BB`, 다크 = 흰색 (`logo_bar`·`logo_perm`). 스플래시 로고는 항상 흰색
 - 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8, 토글 44×26 알약(흰 원 · 보라/회색 트랙). 권한이 빠지면 회색 카드 1장([허용] → S-02). 디자인의 "에이팟 연결"은 오타로 보고 "에어팟 연결" 유지
