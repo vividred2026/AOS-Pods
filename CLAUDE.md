@@ -30,6 +30,8 @@
   - A 메인(M-00 연결 전·권한 / 연결 후 전체) · B 연결·페어링(D-01 안내 / D-02 기기 목록) · C 하위 설정(N-01~03) · D 에어팟 정보(I-01 / D-03 이름 변경 / D-04 청취 모드) · E 정보·진단(D-05 선택형 / D-06 진단 / D-07 AACP 로그) · F 시스템 UI(O-01 팝업 / O-02 알림·타일)
   - 추가 컴포넌트(섹션 `00 Components`): `WF/PairCard`(State=연결 전/후 · Status/Name/Model) · `WF/PodChip`(Letter/Pct) · `WF/ChoiceRow`(Selected · Label) · `WF/DialogButton`(Label) · `WF/PopupPod`(Kind=Bud/Case · Label/Pct). 기존 `WF/PrefRow`·`WF/PrefCategory`·`WF/SeekRow`·`WF/StatusBar`·`WF/Toggle` 재사용
   - 앱 UI를 바꾸면 이 섹션도 함께 갱신할 것
+- **보라 테마 화면(같은 페이지, y≈5901 줄)**: 앱 문구와 일치하도록 정리함(2026-10-31) — S-01 `1216:3004` · S-02 `1216:3249` · 위치 시트 `1216:3451` · 메인 `1216:3535`(정보에 "진단 정보" 행 추가) · 제품 선택 `1216:5011`(파워비츠 프로 추가) · 진단 `1216:5169` · AACP `1216:5303` 등
+  - 새로 추가: **D-01 페어링 모드 안내 `1233:2468`** · **D-02 에어팟 검색 목록 `1233:2625`**(🎧/🔈/· + "(페어링됨)", MAC 주소 없음) — 문구는 `MainActivity.pairGuide`/`startOwnDiscovery`와 같게 유지
 
 ---
 
