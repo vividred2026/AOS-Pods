@@ -37,7 +37,7 @@
     </style>
     <style name="RowSwitch">
         <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_height">26dp</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <!-- 디자인 토글: 보라 트랙 + 흰 원 -->
@@ -47,7 +47,7 @@
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track</item>
         <item name="switchMinWidth">44dp</item>
-        <!-- 머티리얼 기본 최소 높이 48dp를 없애 행 높이를 Figma(제목+요약 64 · 제목만 50)에 맞춤 -->
+        <!-- 높이 26 고정 · 최소 높이 0: 스위치가 48dp로 커져 행을 늘리지 않게(Figma 제목+요약 64 · 제목만 50) -->
         <item name="android:minHeight">0dp</item>
         <item name="android:background">@null</item>
     </style>
