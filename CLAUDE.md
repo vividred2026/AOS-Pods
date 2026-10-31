@@ -63,6 +63,8 @@ app/src/main/java/pro/aospods/app/
 ├─ BtState.kt               연결된 오디오 기기 이름, HFP 전체 배터리, 연결/해제/배터리 방송 수신
 ├─ AirPods.kt               Pods 데이터 클래스 + AirPodsParser(findProximity/messageTypes/parse)
 ├─ WearDetector.kt          착용 감지 판단(2회 연속 확정 · 일시정지/재생 결정) — 안드로이드 의존 없음
+├─ Aap.kt                   AACP(에어팟 전용 프로토콜) 메시지 정의·파서 — 안드로이드 의존 없음
+├─ AapClient.kt             AACP L2CAP(0x1001) 연결 실험 클라이언트 (숨김 생성자 반사)
 ├─ Perms.kt                 필수 런타임 권한 목록·확인 (MainActivity · 타일 공용)
 ├─ PodsOverlay.kt           시스템 오버레이 배터리 팝업(O-01), 닫기(X) 버튼
 ├─ PercentIcon.kt           상태바용 퍼센트 숫자 아이콘(5% 단위) 생성
@@ -74,7 +76,7 @@ app/src/main/java/pro/aospods/app/
 └─ PopupSettingsActivity.kt     N-03 팝업 제목·글자 크기·모서리·여백·어둡게·양쪽 착용 시 숨김
 
 app/src/test/  — 단위 테스트 + Robolectric
-  AirPodsParserTest(+ProximityTlvTest·WornCountTest) · AutoPauseTest(+WearDetectorTest·PercentIconTest) · NotificationTest
+  AirPodsParserTest(+ProximityTlvTest·WornCountTest) · AapTest · AppleAccEvTest · AutoPauseTest(+WearDetectorTest·PercentIconTest) · NotificationTest
   InteractionTest · SmokeTest · TileTest
 ```
 
@@ -131,6 +133,11 @@ app/src/test/  — 단위 테스트 + Robolectric
 - **다음 할 일**: 사용자에게 요청한 테스트 결과 확인 — 귀에 낀 채 한쪽을 뺐다 끼울 때 [진단 정보]의 `07` 수가 늘어나는지.
   - 늘어나면 → 해석·판단 쪽 수정으로 해결 가능
   - 계속 0이면 → 루팅 없이 일반 앱으로는 불가(애플 전용 AAP 프로토콜 필요). 스위치에 "이 기기에서는 지원되지 않음" 표시로 정리
+- 🧪 **AACP 실험 추가** ([진단 정보] → [AACP 실험]): 에어팟과 클래식 L2CAP PSM `0x1001` 채널을 직접 열어 실시간 착용(`0x06`)·1% 배터리(`0x04`)를 받는지 확인 (`Aap.kt` 파서 · `AapClient.kt` 연결).
+  - 소켓은 `BluetoothSocket` 숨김 생성자를 반사로 호출(버전별 시그니처 순차 시도). 연결 후 핸드셰이크 → 기능 플래그 → 알림 요청 순서로 전송.
+  - 참고 자료: pabloaul/apple-wireshark(AACP 해석기), LibrePods 문서(`docs/AAP Definitions.md`). **LibrePods는 GPLv3라 코드 복사 금지** — 프로토콜 사실만 참고해 직접 구현.
+  - LibrePods 기준 루팅 없이 되는 기기: 안드로이드 17(SDK 37)+, 픽셀 16 QPR3, 원플러스·오포 16+. **삼성 16 이하는 미지원 목록** → 실험 결과로 판정.
+  - 결과가 ② 연결 성공 + 착용/배터리 메시지 수신이면 → ScanService에 정식 통합(착용 감지·배터리 1차 경로). 실패면 → 착용 감지 스위치에 "이 기기에서는 지원되지 않음" 표시.
 
 ### 🟠 2. 왼쪽 배터리가 안 나오는 경우가 있었음
 - 케이스를 연 상태에서 오른쪽·케이스만 표시된 적 있음. 원문 패킷 확인 필요 → [진단 정보] → [복사] 내용으로 판정.

@@ -23,6 +23,9 @@ object BtState {
     /** 연결된 오디오 기기 이름. null = 연결 안 됨. */
     val connectedName = MutableStateFlow<String?>(null)
 
+    /** 연결된 오디오 기기 객체(AACP 연결용, 화면에는 표시하지 않음). */
+    @Volatile var connectedDevice: BluetoothDevice? = null
+
     /** 연결된 헤드셋이 블루투스 통화 프로파일(HFP)로 보고하는 '전체' 배터리(0~100). null = 모름.
      *  에어팟은 귀에 끼고 있을 땐 BLE 광고를 거의 안 보내므로, 연결 중엔 이 값이 주 정보원. */
     val hfpBattery = MutableStateFlow<Int?>(null)
@@ -70,11 +73,14 @@ object BtState {
     fun refresh(ctx: Context) {
         if (!hasConnectPerm(ctx)) return
         val adapter = ctx.getSystemService(BluetoothManager::class.java)?.adapter ?: return
-        if (!adapter.isEnabled) { connectedName.value = null; hfpBattery.value = null; return }
+        if (!adapter.isEnabled) {
+            connectedName.value = null; connectedDevice = null; hfpBattery.value = null; return
+        }
         try {
             adapter.getProfileProxy(ctx.applicationContext, object : BluetoothProfile.ServiceListener {
                 override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                     val dev = try { proxy.connectedDevices.firstOrNull() } catch (_: Exception) { null }
+                    connectedDevice = dev
                     connectedName.value = dev?.let { safeName(ctx, it) }
                     // 조회에 실패해도 방송으로 이미 받은 값은 지우지 않음(끊겼을 때만 지움)
                     if (dev == null) hfpBattery.value = null
@@ -111,7 +117,7 @@ object BtState {
                 }
                 BluetoothAdapter.ACTION_STATE_CHANGED -> {
                     if (i.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) != BluetoothAdapter.STATE_ON) {
-                        connectedName.value = null; hfpBattery.value = null
+                        connectedName.value = null; connectedDevice = null; hfpBattery.value = null
                     } else refresh(c)
                 }
                 else -> refresh(c)

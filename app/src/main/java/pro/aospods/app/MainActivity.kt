@@ -460,11 +460,48 @@ class MainActivity : AppCompatActivity() {
         }
         AlertDialog.Builder(this).setTitle("진단 정보").setMessage(text)
             .setPositiveButton("닫기", null)
+            .setNegativeButton("AACP 실험") { _, _ -> showAapExperiment() }
             .setNeutralButton("복사") { _, _ ->
                 val cm = getSystemService(android.content.ClipboardManager::class.java)
                 cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods", text))
                 toast("진단 정보를 복사했습니다")
             }.show()
+    }
+
+    /** 실험: 에어팟과 AACP 채널(L2CAP 0x1001)을 루팅 없이 열 수 있는지 확인하고,
+     *  열리면 실시간 착용·배터리 메시지를 보여준다. 결과는 복사해서 공유할 수 있다. */
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun showAapExperiment() {
+        val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter
+        val dev = BtState.connectedDevice
+        if (adapter == null || !adapter.isEnabled) { toast("블루투스를 켜 주세요"); return }
+        if (dev == null) { toast("에어팟을 먼저 연결해 주세요"); return }
+        if (!runtimePermsOk()) { requestRuntimePerms(); return }
+
+        val logView = android.widget.TextView(this).apply {
+            setTextIsSelectable(true); textSize = 12f
+            setPadding(48, 24, 48, 24)
+        }
+        val scroll = android.widget.ScrollView(this).apply { addView(logView) }
+        val lines = StringBuilder(
+            "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · ${Build.ID}\n"
+        )
+        fun log(s: String) = runOnUiThread {
+            lines.append(s).append('\n'); logView.text = lines
+            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
+        val client = AapClient(adapter, dev, ::log) { }
+        AlertDialog.Builder(this).setTitle("AACP 연결 실험").setView(scroll)
+            .setPositiveButton("닫기", null)
+            .setNeutralButton("복사") { _, _ ->
+                val cm = getSystemService(android.content.ClipboardManager::class.java)
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods-aacp", lines.toString()))
+                toast("실험 결과를 복사했습니다")
+            }
+            .setOnDismissListener { client.close() }
+            .show()
+        log("에어팟과 직접 연결을 시도합니다…")
+        Thread { client.run(); log("— 종료 —") }.apply { isDaemon = true }.start()
     }
 
     private fun showPrivacy() {
