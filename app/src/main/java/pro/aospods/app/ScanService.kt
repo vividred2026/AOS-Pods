@@ -89,6 +89,7 @@ class ScanService : Service() {
             } else {
                 if (connectedSince == 0L) connectedSince = now
                 PodsRepo.wearSignal.value = when {
+                    AapSession.connected.value -> true   // 에어팟 전용 채널: 실시간 착용 이벤트
                     PodsRepo.lastRawAt > 0 && now - PodsRepo.lastRawAt < WEAR_SIGNAL_WINDOW_MS -> true
                     now - connectedSince >= WEAR_SIGNAL_WINDOW_MS -> false
                     else -> null
@@ -143,9 +144,15 @@ class ScanService : Service() {
     }
 
     /** 배터리 상태를 저장소 · 알림 · 팝업에 반영. 어떤 예외도 앱을 죽이지 않게 격리. */
-    private fun deliver(pods: Pods) {
+    private fun deliver(pods: Pods, fromAap: Boolean = false) {
         try {
-            handleAutoPause(pods)            // STEP 3 착용 감지는 매 패킷 판단(2회 연속 확정)
+            if (!fromAap && AapSession.connected.value) {
+                // AACP가 연결돼 있으면 착용은 AACP 이벤트로만 판단하고,
+                // AACP로 받은 1% 배터리가 있으면 BLE(10% 단위) 값으로 덮지 않음
+                if (aapPods != null) return
+            } else if (!fromAap) {
+                handleWear(pods.wornCount, confirmed = false)   // BLE: 매 패킷 판단(2회 연속 확정)
+            }
             // 광고는 초당 여러 번 오므로 값이 바뀐 경우에만 알림·팝업·타일을 다시 그림
             // (알림을 너무 자주 갱신하면 시스템이 버림)
             if (pods == PodsRepo.pods.value) return
@@ -163,11 +170,11 @@ class ScanService : Service() {
     }
 
     /** STEP 3: 끼고 있는 개수가 줄면 일시정지(포커스 획득), 늘면 재생(포커스 반환). 통화 중에는 동작 안 함. */
-    private fun handleAutoPause(pods: Pods) {
+    private fun handleWear(worn: Int, confirmed: Boolean) {
         if (!prefs.autoPause && !prefs.autoResume) { wear.reset(); return }
         val mode = audioManager.mode
         if (mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION) return
-        when (wear.feed(pods.wornCount, prefs.autoPause, prefs.autoResume)) {
+        when (wear.feed(worn, prefs.autoPause, prefs.autoResume, confirmed)) {
             FocusAction.PAUSE -> requestPause()
             FocusAction.RESUME -> abandonResume()
             FocusAction.NONE -> {}
@@ -219,6 +226,7 @@ class ScanService : Service() {
         PodsRepo.running.value = true
         registerBt()
         registerScreen()
+        registerAap()
         // 설정 변경(팝업 ON/OFF·여백 등)을 이미 떠 있는 팝업에 즉시 반영
         val p = PodsRepo.pods.value
         if (p != null && p.hasAny && BtState.connectedName.value != null) showOrHidePopup(p)
@@ -317,12 +325,59 @@ class ScanService : Service() {
         }
     }
 
+    // ---------- AACP(에어팟 전용 채널) 수신 ----------
+    /** AACP로 받은 마지막 착용 개수 · 배터리 기반 상태. AACP 연결이 끊기면 초기화. */
+    private var aapWorn: Int? = null
+    private var aapPods: Pods? = null
+
+    private fun registerAap() {
+        AapSession.onEar = { worn -> handler.post { onAapEar(worn) } }
+        AapSession.onBattery = { list -> handler.post { onAapBattery(list) } }
+    }
+
+    /** 실시간 착용 이벤트 → 자동 일시정지/재생(바로 확정) · 팝업 숨김 조건 갱신. */
+    private fun onAapEar(worn: Int) {
+        aapWorn = worn
+        try {
+            handleWear(worn, confirmed = true)
+            aapPods?.let { deliver(withWorn(it, worn), fromAap = true) }
+        } catch (_: Throwable) {}
+    }
+
+    /** 1% 단위 배터리(왼·오·케이스·충전) → 알림·팝업·타일. */
+    private fun onAapBattery(list: List<Aap.Battery>) {
+        fun level(part: Aap.Part) = list.firstOrNull { it.part == part && it.connected }?.level ?: 0
+        fun charging(part: Aap.Part) = list.any { it.part == part && it.connected && it.charging }
+        val single = level(Aap.Part.SINGLE)
+        val prev = aapPods
+        // 일부 부품만 담긴 메시지가 올 수 있어, 빠진 부품은 직전 AACP 값을 유지
+        val pods = Pods(
+            model = prefs.model,
+            left = level(Aap.Part.LEFT).takeIf { it > 0 } ?: prev?.left ?: single,
+            right = level(Aap.Part.RIGHT).takeIf { it > 0 } ?: prev?.right ?: single,
+            case = level(Aap.Part.CASE).takeIf { it > 0 } ?: prev?.case ?: 0,
+            leftCharging = charging(Aap.Part.LEFT),
+            rightCharging = charging(Aap.Part.RIGHT),
+            caseCharging = charging(Aap.Part.CASE),
+            leftInEar = false, rightInEar = false,
+        )
+        if (!pods.hasAny) return
+        val withEar = withWorn(pods, aapWorn ?: 0)
+        aapPods = withEar
+        deliver(withEar, fromAap = true)
+    }
+
+    /** AACP 착용은 주/보조 유닛 기준이라 좌우를 구분하지 않음 — 개수만 맞춤(양쪽 착용 = 2). */
+    private fun withWorn(p: Pods, worn: Int) = p.copy(leftInEar = worn >= 1, rightInEar = worn >= 2)
+
     /** 에어팟이 연결돼 있으면 AACP 채널을 열고(청취 모드 등), 끊겼으면 닫는다. */
     private fun syncAap() {
         val dev = BtState.connectedDevice
         val adapter = getSystemService(BluetoothManager::class.java)?.adapter
-        if (dev == null || adapter == null || !adapter.isEnabled || !Perms.ok(this)) AapSession.stop()
-        else AapSession.start(adapter, dev)
+        if (dev == null || adapter == null || !adapter.isEnabled || !Perms.ok(this)) {
+            AapSession.onEar = null; AapSession.onBattery = null
+        AapSession.stop(); aapPods = null; aapWorn = null
+        } else AapSession.start(adapter, dev)
     }
 
     @SuppressLint("MissingPermission")

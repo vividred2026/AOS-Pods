@@ -10,9 +10,13 @@ class WearDetector {
     private var pendingWorn: Int? = null   // 오신호 방지용 후보값
     private var pendingCount = 0
 
-    fun feed(wornNow: Int, autoPause: Boolean, autoResume: Boolean): FocusAction {
-        if (wornNow != pendingWorn) { pendingWorn = wornNow; pendingCount = 1; return FocusAction.NONE }
-        if (++pendingCount < 2) return FocusAction.NONE
+    /** confirmed = true: 에어팟이 직접 보낸 착용 이벤트(AACP)처럼 변화 시에만 한 번 오는 확정값 → 바로 판단. */
+    fun feed(wornNow: Int, autoPause: Boolean, autoResume: Boolean, confirmed: Boolean = false): FocusAction {
+        if (confirmed) { pendingWorn = wornNow; pendingCount = 2 }
+        else {
+            if (wornNow != pendingWorn) { pendingWorn = wornNow; pendingCount = 1; return FocusAction.NONE }
+            if (++pendingCount < 2) return FocusAction.NONE
+        }
         if (wornNow == prevWorn) return FocusAction.NONE
         val action = decide(prevWorn, wornNow, autoPause, autoResume)
         prevWorn = wornNow

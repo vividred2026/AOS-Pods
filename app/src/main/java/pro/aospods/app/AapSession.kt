@@ -14,6 +14,10 @@ object AapSession {
     /** 진단·실험 화면용 로그(최근 80줄). */
     val log = MutableStateFlow("")
 
+    /** 서비스가 등록하는 수신 콜백(AACP 수신 스레드에서 호출됨). */
+    @Volatile var onEar: ((wornCount: Int) -> Unit)? = null
+    @Volatile var onBattery: ((List<Aap.Battery>) -> Unit)? = null
+
     private var client: AapClient? = null
     private var device: BluetoothDevice? = null
     private var failedFor: BluetoothDevice? = null
@@ -26,7 +30,12 @@ object AapSession {
         device = dev; failedFor = null
         append("— AACP 연결 시도 —")
         val c = AapClient(adapter, dev, ::append, onConnected = { connected.value = true }) { m ->
-            if (m is Aap.Msg.ListenMode) listenMode.value = m.mode
+            when (m) {
+                is Aap.Msg.ListenMode -> listenMode.value = m.mode
+                is Aap.Msg.Ear -> onEar?.invoke(m.wornCount)
+                is Aap.Msg.Batteries -> onBattery?.invoke(m.list)
+                is Aap.Msg.Other -> {}
+            }
         }
         client = c
         Thread {

@@ -40,6 +40,16 @@ class WearDetectorTest {
         assertEquals(NONE, w.f(2))      // 원래 값으로 돌아오면 아무 동작 없음
     }
 
+    @Test fun confirmedEventsActImmediately() {
+        val w = WearDetector()
+        fun c(n: Int) = w.feed(n, autoPause = true, autoResume = true, confirmed = true)
+        assertEquals("첫 확정값은 기준만", NONE, c(2))
+        assertEquals("AACP 이벤트는 한 번에 일시정지", PAUSE, c(1))
+        assertEquals(PAUSE, c(0))
+        assertEquals("다시 끼면 바로 재생", RESUME, c(1))
+        assertEquals(NONE, c(1))
+    }
+
     @Test fun resetDropsBaseline() {
         val w = WearDetector()
         w.f(2); w.f(2); w.reset()

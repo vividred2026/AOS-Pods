@@ -118,10 +118,13 @@ class MainActivity : AppCompatActivity() {
 
         // 착용 감지: 연결 중인데 에어팟이 착용 신호(0x07)를 보내지 않으면 솔직하게 안내
         lifecycleScope.launch {
-            kotlinx.coroutines.flow.combine(PodsRepo.wearSignal, PodsRepo.running) { w, r -> w to r }
-                .collect { (w, r) ->
+            kotlinx.coroutines.flow.combine(
+                PodsRepo.wearSignal, PodsRepo.running, AapSession.connected
+            ) { w, r, a -> Triple(w, r, a) }
+                .collect { (w, r, a) ->
                     b.wearStatus.text = when {
                         !r -> "서비스를 켜면 착용 신호를 확인해요"
+                        a -> "실시간 착용 감지 사용 중 (에어팟 전용 채널)"
                         w == true -> "착용 신호 수신 중"
                         w == false -> "에어팟이 착용 신호를 보내지 않고 있어요 — " +
                             "이 폰·모델에서는 착용 감지가 동작하지 않을 수 있어요"
