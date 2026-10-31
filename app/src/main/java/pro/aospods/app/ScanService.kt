@@ -226,6 +226,7 @@ class ScanService : Service() {
         startScan()
         handler.removeCallbacks(diagTicker)
         handler.post(diagTicker)
+        handler.postDelayed({ syncAap() }, 1500)   // 연결 기기 조회(비동기) 후 AACP 연결
         return START_STICKY
     }
 
@@ -249,6 +250,7 @@ class ScanService : Service() {
                 }
                 // 연결 중이면 BLE 상세값이 없을 때 HFP 전체 배터리로, 끊기면 끊김 상태로 알림 갱신
                 notifyCurrent()
+                syncAap()
                 OnOffTileService.refresh(this)
             }, 800)   // 프로파일 조회(비동기) 결과 반영 대기
         }
@@ -315,6 +317,14 @@ class ScanService : Service() {
         }
     }
 
+    /** 에어팟이 연결돼 있으면 AACP 채널을 열고(청취 모드 등), 끊겼으면 닫는다. */
+    private fun syncAap() {
+        val dev = BtState.connectedDevice
+        val adapter = getSystemService(BluetoothManager::class.java)?.adapter
+        if (dev == null || adapter == null || !adapter.isEnabled || !Perms.ok(this)) AapSession.stop()
+        else AapSession.start(adapter, dev)
+    }
+
     @SuppressLint("MissingPermission")
     private fun stopScan() {
         try { scanner?.stopScan(callback) } catch (_: Exception) {}
@@ -339,6 +349,7 @@ class ScanService : Service() {
         screenReceiver = null
         handler.removeCallbacksAndMessages(null)
         abandonResume()   // 보유 중인 오디오 포커스 반환
+        AapSession.stop()
         overlay.hide()
         stopScan()
     }

@@ -13,8 +13,12 @@ class AapClient(
     private val adapter: BluetoothAdapter,
     private val device: BluetoothDevice,
     private val log: (String) -> Unit,
+    private val onConnected: () -> Unit = {},
     private val onMessage: (Aap.Msg) -> Unit,
 ) {
+    /** 한 번이라도 연결에 성공했는지. */
+    @Volatile var everConnected = false
+        private set
     @Volatile private var socket: BluetoothSocket? = null
     @Volatile private var closed = false
 
@@ -40,13 +44,14 @@ class AapClient(
             close(); return
         }
         watchdog.interrupt()
+        everConnected = true
         log("② 연결 성공 — 초기 메시지 전송")
 
         try {
-            val out = s.outputStream
             for (p in listOf(Aap.HANDSHAKE, Aap.FEATURE_FLAGS, Aap.REQUEST_NOTIFICATIONS)) {
-                out.write(p); out.flush(); Thread.sleep(200)
+                send(p); Thread.sleep(200)
             }
+            onConnected()
             log("③ 전송 완료 — 에어팟 응답 대기 (한쪽을 뺐다 끼워 보세요)")
             val buf = ByteArray(1024)
             val input = s.inputStream
@@ -71,6 +76,15 @@ class AapClient(
         } catch (e: Throwable) {
             if (!closed) log("수신 오류: ${errText(e)}")
         } finally { close() }
+    }
+
+    /** 에어팟에 메시지 전송. 연결돼 있지 않거나 실패하면 false. */
+    fun send(p: ByteArray): Boolean {
+        val s = socket ?: return false
+        if (closed || !s.isConnected) return false
+        return try {
+            synchronized(this) { s.outputStream.write(p); s.outputStream.flush() }; true
+        } catch (e: Exception) { log("전송 실패: ${errText(e)}"); false }
     }
 
     fun close() {

@@ -36,8 +36,15 @@ class AapTest {
         assertEquals(0, (Aap.parse(hex("04 00 04 00 06 00 02 02")) as Aap.Msg.Ear).wornCount)
     }
 
+    @Test fun parsesListenMode() {
+        assertEquals(Aap.Msg.ListenMode(Aap.MODE_ANC), Aap.parse(hex("04 00 04 00 09 00 0D 02 00 00 00")))
+        assertEquals(Aap.Msg.ListenMode(Aap.MODE_TRANSPARENCY), Aap.parse(Aap.listenModePacket(Aap.MODE_TRANSPARENCY)))
+        assertEquals("04 00 04 00 09 00 0D 04 00 00 00",
+            Aap.listenModePacket(Aap.MODE_ADAPTIVE).joinToString(" ") { "%02X".format(it) })
+    }
+
     @Test fun otherAndInvalid() {
-        assertEquals(Aap.Msg.Other(0x09), Aap.parse(hex("04 00 04 00 09 00 0D 02 00 00 00")))
+        assertEquals(Aap.Msg.Other(0x09), Aap.parse(hex("04 00 04 00 09 00 28 01 00 00 00")))
         assertNull(Aap.parse(hex("01 00 04 00 06 00 00 00")))
         assertNull(Aap.parse(hex("04 00 04")))
     }

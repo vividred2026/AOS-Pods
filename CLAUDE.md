@@ -64,7 +64,8 @@ app/src/main/java/pro/aospods/app/
 ├─ AirPods.kt               Pods 데이터 클래스 + AirPodsParser(findProximity/messageTypes/parse)
 ├─ WearDetector.kt          착용 감지 판단(2회 연속 확정 · 일시정지/재생 결정) — 안드로이드 의존 없음
 ├─ Aap.kt                   AACP(에어팟 전용 프로토콜) 메시지 정의·파서 — 안드로이드 의존 없음
-├─ AapClient.kt             AACP L2CAP(0x1001) 연결 실험 클라이언트 (숨김 생성자 반사)
+├─ AapClient.kt             AACP L2CAP(0x1001) 연결 클라이언트 (숨김 생성자 반사)
+├─ AapSession.kt            AACP 상시 연결(앱 전역 하나) — ScanService가 에어팟 연결/해제에 맞춰 시작·정지, 청취 모드 상태
 ├─ Perms.kt                 필수 런타임 권한 목록·확인 (MainActivity · 타일 공용)
 ├─ PodsOverlay.kt           시스템 오버레이 배터리 팝업(O-01), 닫기(X) 버튼
 ├─ PercentIcon.kt           상태바용 퍼센트 숫자 아이콘(5% 단위) 생성
@@ -85,8 +86,9 @@ app/src/test/  — 단위 테스트 + Robolectric
 2. 서비스 활성화
 3. 모델 (에어팟 1·2 / 에어팟 프로 / 파워비츠 프로 / 에어팟 3 / 에어팟 4)
 4. **배터리 표시**: 알림으로 표시 · 알림 아이콘에 퍼센트 표시 · 팝업 창으로 표시 (글자를 누르면 각 하위 설정, 스위치는 ON/OFF)
-5. **착용 감지**: 일시정지 · 다시 재생
-6. 정보: 다크 모드 · 진단 정보 · 개인정보처리방침
+5. **청취 모드** (AACP 연결 성공 시에만 표시): 노이즈 캔슬링 · 주변음 허용 · 적응형 · 끔
+6. **착용 감지**: 일시정지 · 다시 재생
+7. 정보: 다크 모드 · 진단 정보 · 개인정보처리방침
 
 ### 권한
 `BLUETOOTH_SCAN`(neverForLocation) · `BLUETOOTH_CONNECT` · `ACCESS_FINE/COARSE_LOCATION` · `POST_NOTIFICATIONS` · `SYSTEM_ALERT_WINDOW`(팝업) · `FOREGROUND_SERVICE(_CONNECTED_DEVICE)` · `BLUETOOTH`/`BLUETOOTH_ADMIN`(maxSdk 30)
@@ -137,6 +139,8 @@ app/src/test/  — 단위 테스트 + Robolectric
   - 소켓은 `BluetoothSocket` 숨김 생성자를 반사로 호출(버전별 시그니처 순차 시도). 연결 후 핸드셰이크 → 기능 플래그 → 알림 요청 순서로 전송.
   - 참고 자료: pabloaul/apple-wireshark(AACP 해석기), LibrePods 문서(`docs/AAP Definitions.md`). **LibrePods는 GPLv3라 코드 복사 금지** — 프로토콜 사실만 참고해 직접 구현.
   - LibrePods 기준 루팅 없이 되는 기기: 안드로이드 17(SDK 37)+, 픽셀 16 QPR3, 원플러스·오포 16+. **삼성 16 이하는 미지원 목록** → 실험 결과로 판정.
+  - 서비스가 에어팟 연결 시 자동으로 AACP 연결을 1회 시도(`AapSession`), 실패한 기기는 재연결 전까지 재시도 안 함. [AACP 실험] 화면은 이 세션 로그를 보여주고, 끊겨 있으면 강제 재시도.
+  - ✅ **청취 모드 변경**(`04 00 04 00 09 00 0D [mode] 00 00 00`, 01 끔·02 노캔·03 주변음·04 적응형): AACP가 연결됐을 때만 메뉴 표시. 바꾼 뒤 2초 안에 에어팟이 같은 값을 보내 확인하지 않으면 "지원되지 않을 수 있음" 안내(노캔 없는 모델·'끔' 미허용 설정 등).
   - 결과가 ② 연결 성공 + 착용/배터리 메시지 수신이면 → ScanService에 정식 통합(착용 감지·배터리 1차 경로). 실패면 → 착용 감지 스위치에 "이 기기에서는 지원되지 않음" 표시.
 
 ### 🟠 2. 왼쪽 배터리가 안 나오는 경우가 있었음

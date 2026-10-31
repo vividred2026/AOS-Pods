@@ -19,6 +19,24 @@ object Aap {
 
     const val OP_BATTERY = 0x04
     const val OP_EAR = 0x06
+    const val OP_CONTROL = 0x09
+    /** 제어 메시지(0x09) 안의 '청취 모드' 항목. */
+    const val CTRL_LISTEN_MODE = 0x0D
+
+    /** 청취 모드 값. */
+    const val MODE_OFF = 0x01
+    const val MODE_ANC = 0x02
+    const val MODE_TRANSPARENCY = 0x03
+    const val MODE_ADAPTIVE = 0x04
+    val MODES = listOf(MODE_ANC, MODE_TRANSPARENCY, MODE_ADAPTIVE, MODE_OFF)
+
+    fun modeName(m: Int?) = when (m) {
+        MODE_OFF -> "끔"; MODE_ANC -> "노이즈 캔슬링"; MODE_TRANSPARENCY -> "주변음 허용"
+        MODE_ADAPTIVE -> "적응형"; null -> "확인 중"; else -> "알 수 없음(0x%02X)".format(m)
+    }
+
+    /** 청취 모드 변경 요청: 04 00 04 00 09 00 0D [mode] 00 00 00 (에어팟도 같은 형식으로 현재 모드를 알림). */
+    fun listenModePacket(mode: Int) = bytes(0x04, 0x00, 0x04, 0x00, OP_CONTROL, 0x00, CTRL_LISTEN_MODE, mode, 0x00, 0x00, 0x00)
     /** 주소·일련번호가 들어 있어 진단 화면에 원문을 보이지 않는 메시지. */
     val PRIVATE_OPS = setOf(0x0B, 0x0C, 0x0E, 0x1D)
 
@@ -33,6 +51,7 @@ object Aap {
         data class Ear(val primary: Place, val secondary: Place) : Msg() {
             val wornCount: Int get() = listOf(primary, secondary).count { it == Place.IN_EAR }
         }
+        data class ListenMode(val mode: Int) : Msg()
         data class Other(val opcode: Int) : Msg()
     }
 
@@ -65,6 +84,9 @@ object Aap {
                 if (p.size < 8) return null
                 Msg.Ear(place(p[6].u()), place(p[7].u()))
             }
+            OP_CONTROL -> {
+                if (p.size >= 8 && p[6].u() == CTRL_LISTEN_MODE) Msg.ListenMode(p[7].u()) else Msg.Other(op)
+            }
             else -> Msg.Other(op)
         }
     }
@@ -83,6 +105,7 @@ object Aap {
             if (!b.connected) "$name 없음" else "$name ${b.level}%" + if (b.charging) "⚡" else ""
         }
         is Msg.Ear -> "착용: 주 유닛 ${placeName(m.primary)} · 보조 ${placeName(m.secondary)} → 끼고 있는 개수 ${m.wornCount}"
+        is Msg.ListenMode -> "청취 모드: ${modeName(m.mode)}"
         is Msg.Other -> "기타 메시지 0x%02X".format(m.opcode)
     }
 

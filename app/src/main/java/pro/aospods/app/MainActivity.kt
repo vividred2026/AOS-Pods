@@ -106,6 +106,16 @@ class MainActivity : AppCompatActivity() {
                     b.btnPair.text = if (n == null) "연결하기" else "다시 연결"
                 }
         }
+        // 청취 모드: AACP 연결에 성공했을 때만 메뉴 표시
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(AapSession.connected, AapSession.listenMode) { c, m -> c to m }
+                .collect { (c, m) ->
+                    b.listenSection.visibility = if (c) View.VISIBLE else View.GONE
+                    b.listenValue.text = Aap.modeName(m)
+                }
+        }
+        b.rowListen.setOnClickListener { showListenModePicker() }
+
         // 착용 감지: 연결 중인데 에어팟이 착용 신호(0x07)를 보내지 않으면 솔직하게 안내
         lifecycleScope.launch {
             kotlinx.coroutines.flow.combine(PodsRepo.wearSignal, PodsRepo.running) { w, r -> w to r }
@@ -468,8 +478,24 @@ class MainActivity : AppCompatActivity() {
             }.show()
     }
 
-    /** 실험: 에어팟과 AACP 채널(L2CAP 0x1001)을 루팅 없이 열 수 있는지 확인하고,
-     *  열리면 실시간 착용·배터리 메시지를 보여준다. 결과는 복사해서 공유할 수 있다. */
+    /** 청취 모드 선택 → 에어팟에 전송. 2초 안에 에어팟이 같은 모드로 확인해 주지 않으면 미지원 안내. */
+    private fun showListenModePicker() {
+        val modes = Aap.MODES
+        val labels = modes.map { Aap.modeName(it) }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("청취 모드")
+            .setSingleChoiceItems(labels, modes.indexOf(AapSession.listenMode.value)) { d, w ->
+                d.dismiss()
+                val want = modes[w]
+                if (!AapSession.setListenMode(want)) { toast("에어팟과 연결이 끊겨 바꾸지 못했어요"); return@setSingleChoiceItems }
+                b.root.postDelayed({
+                    if (AapSession.connected.value && AapSession.listenMode.value != want)
+                        toast("에어팟이 '${labels[w]}'을(를) 확인해 주지 않았어요 — 이 모델이나 설정에서는 지원되지 않을 수 있어요")
+                }, 2000)
+            }.setNegativeButton("닫기", null).show()
+    }
+
+    /** AACP 연결 상태·로그 확인. 연결돼 있지 않으면 지금 다시 시도한다(실패 원인이 로그에 남음).
+     *  열리면 실시간 착용·배터리·청취 모드 메시지가 보인다. 결과는 복사해서 공유할 수 있다. */
     @android.annotation.SuppressLint("MissingPermission")
     private fun showAapExperiment() {
         val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter
@@ -478,30 +504,28 @@ class MainActivity : AppCompatActivity() {
         if (dev == null) { toast("에어팟을 먼저 연결해 주세요"); return }
         if (!runtimePermsOk()) { requestRuntimePerms(); return }
 
+        val head = "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · ${Build.ID}\n"
         val logView = android.widget.TextView(this).apply {
             setTextIsSelectable(true); textSize = 12f
             setPadding(48, 24, 48, 24)
         }
         val scroll = android.widget.ScrollView(this).apply { addView(logView) }
-        val lines = StringBuilder(
-            "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · ${Build.ID}\n"
-        )
-        fun log(s: String) = runOnUiThread {
-            lines.append(s).append('\n'); logView.text = lines
-            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        val job = lifecycleScope.launch {
+            AapSession.log.collect {
+                logView.text = head + it
+                scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            }
         }
-        val client = AapClient(adapter, dev, ::log) { }
-        AlertDialog.Builder(this).setTitle("AACP 연결 실험").setView(scroll)
+        AlertDialog.Builder(this).setTitle("AACP 연결 (실험)").setView(scroll)
             .setPositiveButton("닫기", null)
             .setNeutralButton("복사") { _, _ ->
                 val cm = getSystemService(android.content.ClipboardManager::class.java)
-                cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods-aacp", lines.toString()))
-                toast("실험 결과를 복사했습니다")
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("aospods-aacp", head + AapSession.log.value))
+                toast("AACP 로그를 복사했습니다")
             }
-            .setOnDismissListener { client.close() }
+            .setOnDismissListener { job.cancel() }
             .show()
-        log("에어팟과 직접 연결을 시도합니다…")
-        Thread { client.run(); log("— 종료 —") }.apply { isDaemon = true }.start()
+        if (!AapSession.connected.value) AapSession.start(adapter, dev, force = true)
     }
 
     private fun showPrivacy() {
