@@ -304,7 +304,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        stopDiscovery()
+        stopDiscovery(); stopBondWatch()
         btUiReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
         btUiReceiver = null
     }
@@ -502,20 +502,139 @@ class MainActivity : AppCompatActivity() {
         discoveryReceiver = null
     }
 
-    /** 선택한 에어팟과 페어링(본딩). 완료되면 안드로이드가 음악 연결을 자동으로 맺음. */
+    // ---------- 페어링 진행 (본딩 → 프로파일 연결) ----------
+
+    private var bondReceiver: android.content.BroadcastReceiver? = null
+    private var bondSheet: Sheets.Sheet? = null
+    private var bondLog: android.widget.TextView? = null
+    private val bondLines = StringBuilder()
+    private val ui = android.os.Handler(android.os.Looper.getMainLooper())
+
+    private fun bondAppend(line: String) {
+        val t = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.KOREA).format(java.util.Date())
+        bondLines.append(t).append("  ").append(line).append('\n')
+        bondLog?.text = bondLines.toString()
+    }
+
+    /** 선택한 에어팟과 페어링(본딩)하고, 끝나면 음악·통화 프로파일 연결까지 시도한다.
+     *  설정 앱에서 페어링하면 시스템이 연결까지 해 주지만, 앱이 createBond()로 페어링하면
+     *  본딩만 되고 연결은 안 되는 폰이 있어서(실기기 보고) 그 다음 단계를 직접 밟는다. */
     @android.annotation.SuppressLint("MissingPermission")
     private fun bond(dev: android.bluetooth.BluetoothDevice) {
-        try {
-            val name = BtState.safeName(this, dev)
-            if (dev.bondState == android.bluetooth.BluetoothDevice.BOND_BONDED) {
-                toast("$name — 이미 페어링됨. 블루투스 설정에서 '연결'을 눌러주세요")
-                openBtSettings(); return
+        val name = BtState.safeName(this, dev)
+        stopBondWatch()
+        bondLines.clear()
+        val s = Sheets.base(this, "에어팟 연결 중").link("블루투스 설정") { openBtSettings() }
+        bondLog = s.text("")
+        s.buttons("복사", { copy("aospods-pair", bondLines.toString(), "진행 기록을 복사했습니다") },
+            "닫기", { s.dialog.dismiss() })
+        s.dialog.setOnDismissListener { if (bondSheet === s) { stopBondWatch(); bondSheet = null; bondLog = null } }
+        bondSheet = s
+        s.dialog.show()
+        bondAppend("$name 선택 · 안드로이드 ${Build.VERSION.SDK_INT} · 빌드 ${BuildConfig.BUILD_ID}")
+
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: android.content.Context, i: Intent) {
+                @Suppress("DEPRECATION")
+                val d: android.bluetooth.BluetoothDevice = i.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE) ?: return
+                if (d.address != dev.address) return
+                when (i.action) {
+                    android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                        val st = i.getIntExtra(android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE, -1)
+                        bondAppend("페어링 상태: " + when (st) {
+                            android.bluetooth.BluetoothDevice.BOND_BONDING -> "진행 중"
+                            android.bluetooth.BluetoothDevice.BOND_BONDED -> "완료"
+                            android.bluetooth.BluetoothDevice.BOND_NONE -> "안 됨(거부·취소·실패)"
+                            else -> "$st"
+                        })
+                        if (st == android.bluetooth.BluetoothDevice.BOND_BONDED) afterBonded(dev)
+                        if (st == android.bluetooth.BluetoothDevice.BOND_NONE)
+                            bondAppend("→ 다시 시도하거나 [블루투스 설정]에서 페어링해 주세요")
+                    }
+                    android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED,
+                    android.bluetooth.BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> {
+                        val st = i.getIntExtra(android.bluetooth.BluetoothProfile.EXTRA_STATE, -1)
+                        val which = if (i.action == android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED) "음악" else "통화"
+                        bondAppend("$which 프로파일: " + when (st) {
+                            android.bluetooth.BluetoothProfile.STATE_CONNECTING -> "연결 중"
+                            android.bluetooth.BluetoothProfile.STATE_CONNECTED -> "연결됨 ✅"
+                            android.bluetooth.BluetoothProfile.STATE_DISCONNECTED -> "끊김"
+                            else -> "$st"
+                        })
+                        if (st == android.bluetooth.BluetoothProfile.STATE_CONNECTED) {
+                            ui.removeCallbacksAndMessages(null)
+                            bondAppend("연결 완료 — 잠시 후 배터리가 표시돼요")
+                            BtState.refresh(this@MainActivity)
+                        }
+                    }
+                }
             }
-            if (dev.createBond()) toast("$name 페어링 중… 화면의 요청을 허용해 주세요")
-            else { toast("페어링을 시작하지 못했어요 — 블루투스 설정에서 연결해 주세요"); openBtSettings() }
-        } catch (e: Exception) {
-            toast("페어링 오류: ${e.message}"); openBtSettings()
         }
+        bondReceiver = r
+        androidx.core.content.ContextCompat.registerReceiver(this, r, android.content.IntentFilter().apply {
+            addAction(android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            addAction(android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
+            addAction(android.bluetooth.BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
+        }, androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
+
+        try {
+            if (dev.bondState == android.bluetooth.BluetoothDevice.BOND_BONDED) {
+                bondAppend("이미 페어링된 기기 → 연결만 시도")
+                afterBonded(dev)
+            } else if (dev.createBond()) {
+                bondAppend("페어링 요청 보냄 — 화면에 요청이 뜨면 허용해 주세요")
+            } else {
+                bondAppend("페어링을 시작하지 못했어요(createBond=false) → [블루투스 설정]에서 페어링해 주세요")
+            }
+        } catch (e: Exception) {
+            bondAppend("페어링 오류: ${e.javaClass.simpleName} ${e.message}")
+        }
+    }
+
+    /** 본딩 뒤: 시스템이 알아서 연결하는지 잠시 기다리고, 안 되면 숨김 API connect()로 직접 연결 시도. */
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun afterBonded(dev: android.bluetooth.BluetoothDevice) {
+        ui.removeCallbacksAndMessages(null)
+        bondAppend("시스템 자동 연결 기다리는 중(3초)…")
+        ui.postDelayed({ if (!isA2dpConnected(dev)) connectProfiles(dev) else bondAppend("음악 프로파일 이미 연결됨 ✅") }, 3000)
+        ui.postDelayed({
+            if (!isA2dpConnected(dev)) bondAppend("아직 연결되지 않았어요 → [블루투스 설정]에서 에어팟을 눌러 연결해 주세요. " +
+                "이 기록을 [복사]해 보내 주시면 원인을 확인할 수 있어요")
+        }, 12000)
+    }
+
+    private fun isA2dpConnected(dev: android.bluetooth.BluetoothDevice): Boolean =
+        try { BtState.connectedDevice?.address == dev.address } catch (_: Exception) { false }
+
+    /** BluetoothA2dp/BluetoothHeadset.connect(device) — 숨김 API. 12+에선 권한(BLUETOOTH_PRIVILEGED) 때문에 거부될 수 있어 결과를 기록만 함. */
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun connectProfiles(dev: android.bluetooth.BluetoothDevice) {
+        val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter ?: return
+        HiddenApi.allowBluetooth()
+        for ((profile, label) in listOf(android.bluetooth.BluetoothProfile.A2DP to "음악", android.bluetooth.BluetoothProfile.HEADSET to "통화")) {
+            try {
+                adapter.getProfileProxy(applicationContext, object : android.bluetooth.BluetoothProfile.ServiceListener {
+                    override fun onServiceConnected(p: Int, proxy: android.bluetooth.BluetoothProfile) {
+                        val res = try {
+                            val m = proxy.javaClass.getMethod("connect", android.bluetooth.BluetoothDevice::class.java)
+                            "connect() → ${m.invoke(proxy, dev)}"
+                        } catch (e: Throwable) {
+                            val cause = (e as? java.lang.reflect.InvocationTargetException)?.targetException ?: e
+                            "connect() 불가: ${cause.javaClass.simpleName} ${cause.message ?: ""}".trim()
+                        }
+                        ui.post { bondAppend("$label 프로파일 직접 연결: $res") }
+                        try { adapter.closeProfileProxy(p, proxy) } catch (_: Exception) {}
+                    }
+                    override fun onServiceDisconnected(p: Int) {}
+                }, profile)
+            } catch (e: Exception) { bondAppend("$label 프로파일 접근 실패: ${e.message}") }
+        }
+    }
+
+    private fun stopBondWatch() {
+        ui.removeCallbacksAndMessages(null)
+        bondReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+        bondReceiver = null
     }
 
     private fun openBtSettings() {

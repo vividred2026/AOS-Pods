@@ -19,6 +19,9 @@ object HiddenApi {
             val ok = HiddenApiBypass.addHiddenApiExemptions(
                 "Landroid/bluetooth/BluetoothSocket;",
                 "Landroid/bluetooth/BluetoothDevice;",
+                // 페어링 직후 음악·통화 프로파일 연결 시도(connect()는 숨김 API)
+                "Landroid/bluetooth/BluetoothA2dp;",
+                "Landroid/bluetooth/BluetoothHeadset;",
             )
             result = if (ok) "예외 등록 성공" else "예외 등록 실패"
             ok
