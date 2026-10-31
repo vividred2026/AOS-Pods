@@ -70,5 +70,12 @@ class ScreenshotTest {
         save(org.robolectric.shadows.ShadowDialog.getLatestDialog().window!!.decorView, "d01_pair_guide")
     }
 
+    @Test fun privacySheet() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        MainActivity::class.java.getDeclaredMethod("showPrivacy").apply { isAccessible = true }.invoke(a)
+        shadowOf(Looper.getMainLooper()).idle()
+        save(org.robolectric.shadows.ShadowDialog.getLatestDialog().window!!.decorView, "d08_privacy")
+    }
+
     @Test fun notifSettings() = shot(Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().get(), "n01_notif")
 }

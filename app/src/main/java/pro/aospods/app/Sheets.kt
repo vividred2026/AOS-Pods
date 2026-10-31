@@ -48,6 +48,13 @@ object Sheets {
         return this
     }
 
+    /** 하단 버튼 하나(보라, 전체 폭) — 예: 개인정보 처리방침 [확인]. */
+    fun Sheet.button(primary: String, onPrimary: () -> Unit): Sheet {
+        buttons("", {}, primary, onPrimary)
+        b.sheetSecondary.visibility = View.GONE
+        return this
+    }
+
     /** 본문 텍스트(14sp, 줄간격 1.2). 반환된 TextView로 내용을 갱신할 수 있다. */
     fun Sheet.text(body: CharSequence): TextView {
         val t = TextView(dialog.context).apply {

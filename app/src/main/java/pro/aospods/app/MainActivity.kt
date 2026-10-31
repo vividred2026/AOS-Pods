@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import pro.aospods.app.Sheets.button
 import pro.aospods.app.Sheets.buttons
 import pro.aospods.app.Sheets.link
 import pro.aospods.app.Sheets.text
@@ -599,11 +600,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPrivacy() {
-        AlertDialog.Builder(this).setTitle("개인정보처리방침")
-            .setMessage(
-                "AosPods는 AirPods가 주변에 보내는 블루투스 신호만 읽어 배터리 상태를 " +
-                "표시합니다. 위치·배터리 정보를 수집하거나 외부로 전송하지 않으며, " +
-                "모든 처리는 기기 안에서만 이루어집니다."
-            ).setPositiveButton("확인", null).show()
+        // 하단 시트(Figma `1230:2896`): 제목 + ✕ · 본문 · [확인]
+        val s = Sheets.base(this, "개인정보 처리방침")
+        s.b.sheetBody.addView(sheetText(s.dialog.context,
+            "AosPods는 AirPods가 주변에 보내는 블루투스 신호만 읽어 배터리 상태를 " +
+            "표시합니다. 위치·배터리 정보를 수집하거나 외부로 전송하지 않으며, " +
+            "모든 처리는 기기 안에서만 이루어집니다.", 14f, R.color.ink))
+        s.button("확인") { s.dialog.dismiss() }
+        s.dialog.show()
     }
 }
