@@ -646,6 +646,8 @@ class MainActivity : AppCompatActivity() {
 
     /** 마지막 에어팟 패킷 원문과 글자 위치별 해석값을 보여주고 복사할 수 있게 함. */
     private fun showDiag() {
+        // 진단을 보는 동안은 빠른 스캔(저전력 모드에선 광고를 놓쳐 "07 0"으로 보일 수 있음) — 5초 주기 재평가에서 반영
+        PodsRepo.boostUntil = System.currentTimeMillis() + 90_000
         val hex = PodsRepo.lastRawHex
         val recent = synchronized(PodsRepo.recentRaw) { PodsRepo.recentRaw.toList() }
         val head = "연결: ${BtState.connectedName.value ?: "없음"} · HFP 배터리: ${BtState.hfpBattery.value?.let { "$it%" } ?: "없음"}\n" +

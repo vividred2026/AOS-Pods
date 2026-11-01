@@ -40,6 +40,8 @@ object PodsRepo {
     val recentRaw = ArrayDeque<String>()
     /** 실험: 암호화 광고(0x07 길이 0x11 등)를 AACP 키로 복호화한 결과 — 서로 다른 것 최대 8개("원문 꼬리 → 복호화"). */
     val recentDecrypted = ArrayDeque<String>()
+    /** 이 시각까지 빠른 스캔(진단 정보 시트를 열면 90초 연장). */
+    @Volatile var boostUntil: Long = 0
     /** 복호화에 쓸 키가 있는지 등 진단용 메모. */
     @Volatile var bleKeyNote: String = "키 없음"
     /** AACP로 새 키를 받으면 1 증가(서비스가 키를 다시 읽음). */
@@ -335,6 +337,8 @@ class ScanService : Service() {
      *  - 화면 OFF: 저전력 / 화면 ON(케이스를 열어 바로 봐야 함): 빠른 스캔 */
     private fun desiredScanMode(): Int? = when {
         BtState.connectedName.value == null -> null
+        // 진단 정보를 여는 동안(90초)은 빠른 스캔 — 저전력(5초에 0.5초)으로는 짧게 터지는 광고를 거의 놓침(실기기: AACP 중 0x07 0건)
+        System.currentTimeMillis() < PodsRepo.boostUntil && isScreenOn() -> ScanSettings.SCAN_MODE_LOW_LATENCY
         AapSession.connected.value -> ScanSettings.SCAN_MODE_LOW_POWER
         !isScreenOn() -> ScanSettings.SCAN_MODE_LOW_POWER
         else -> ScanSettings.SCAN_MODE_LOW_LATENCY
