@@ -132,5 +132,20 @@ class ScreenshotTest {
         File(out, "icon_round.png").outputStream().use { round.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** 상태바 작은 아이콘 미리보기: 어두운 바 위에 ic_pods(윤곽)·ic_pods_solid(실루엣)를 18dp·24dp로. */
+    @Test fun statusIcons() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val d = a.resources.displayMetrics.density
+        val bmp = Bitmap.createBitmap((160 * d).toInt(), (40 * d).toInt(), Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp); c.drawColor(0xFF202124.toInt())
+        var x = (8 * d).toInt()
+        for ((res, size) in listOf(R.drawable.ic_pods to 18, R.drawable.ic_pods_solid to 18, R.drawable.ic_pods to 24, R.drawable.ic_pods_solid to 24)) {
+            val dr = a.getDrawable(res)!!
+            val px = (size * d).toInt(); val y = ((40 - size) / 2 * d).toInt()
+            dr.setBounds(x, y, x + px, y + px); dr.draw(c); x += px + (16 * d).toInt()
+        }
+        File(out, "status_icons.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     @Test fun notifSettings() = shot(Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().get(), "n01_notif")
 }
