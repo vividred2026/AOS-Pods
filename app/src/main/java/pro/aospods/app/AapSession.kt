@@ -25,6 +25,11 @@ object AapSession {
     /** 서비스가 등록하는 수신 콜백(AACP 수신 스레드에서 호출됨). */
     @Volatile var onEar: ((wornCount: Int) -> Unit)? = null
     @Volatile var onBattery: ((List<Aap.Battery>) -> Unit)? = null
+    /** 이번 연결에서 마지막으로 받은 착용 개수·배터리(서비스가 콜백을 늦게 등록해도 되돌려 받을 수 있게). */
+    @Volatile var lastEar: Int? = null
+        private set
+    @Volatile var lastBatteries: List<Aap.Battery>? = null
+        private set
 
     private var client: AapClient? = null
     private var device: BluetoothDevice? = null
@@ -59,8 +64,8 @@ object AapSession {
                     try { prefs.saveBleEncKey(key, k) } catch (_: Exception) {}
                     PodsRepo.bleKeyVersion.value++
                 }
-                is Aap.Msg.Ear -> onEar?.invoke(m.wornCount)
-                is Aap.Msg.Batteries -> onBattery?.invoke(m.list)
+                is Aap.Msg.Ear -> { lastEar = m.wornCount; onEar?.invoke(m.wornCount) }
+                is Aap.Msg.Batteries -> { lastBatteries = m.list; onBattery?.invoke(m.list) }
                 is Aap.Msg.Other -> {}
             }
         }
@@ -84,6 +89,7 @@ object AapSession {
 
     private fun stopLocked() {
         client?.close(); client = null; device = null
+        lastEar = null; lastBatteries = null
         connected.value = false; listenMode.value = null; info.value = null; infoFresh.value = false; pendingName.value = null
     }
 

@@ -246,6 +246,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 | 연결됐는데 HFP 배터리 계속 "확인 중" | 숨김 API 조회 실패 시 `refresh()`가 값을 null로 덮어씀 | 덮어쓰기 제거 + 공개 API `IPHONEACCEV` 수신 |
 | 폰 배터리 소모 큼 | BLE 스캔이 최고 강도(`LOW_LATENCY`)로 24시간 — 에어팟 미연결·AACP 연결·화면 OFF일 때도 | `ScanService.updateScan()`: 미연결 = 스캔 중지, AACP 연결·화면 OFF = `LOW_POWER`, 화면 ON + AACP 없음 = `LOW_LATENCY`. 5초 진단 주기·연결/화면 방송 때 재평가, 바뀔 때만 재시작 |
 | 팝업 제목이 모델명 | 기기 이름 미사용 | 연결된 기기 이름(없으면 모델명) |
+| AACP 로그엔 배터리가 오는데 화면엔 "배터리 확인 중"(full 새 설치, 서비스 ON) | `registerAap()`을 onCreate에서 한 번만 호출 → 연결 기기 조회 전 `syncAap()`이 콜백을 null로 지움 → 이후 연결 시 세션만 열고 콜백 미등록 | 연결 분기에서 매번 `registerAap()` + `AapSession.lastEar/lastBatteries` 되돌려 받기 |
 
 ---
 

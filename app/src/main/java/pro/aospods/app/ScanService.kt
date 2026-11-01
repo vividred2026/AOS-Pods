@@ -407,6 +407,9 @@ class ScanService : Service() {
     private fun registerAap() {
         AapSession.onEar = { worn -> handler.post { onAapEar(worn) } }
         AapSession.onBattery = { list -> handler.post { onAapBattery(list) } }
+        // 콜백 등록 전에 이미 도착한 값(연결 직후 한 번에 오는 배터리·착용)을 놓치지 않도록 되돌려 받음
+        AapSession.lastEar?.let { w -> handler.post { onAapEar(w) } }
+        AapSession.lastBatteries?.let { l -> handler.post { onAapBattery(l) } }
     }
 
     /** 실시간 착용 이벤트 → 자동 일시정지/재생(바로 확정) · 팝업 숨김 조건 갱신. */
@@ -450,8 +453,12 @@ class ScanService : Service() {
         val adapter = getSystemService(BluetoothManager::class.java)?.adapter
         if (dev == null || adapter == null || !adapter.isEnabled || !Perms.ok(this)) {
             AapSession.onEar = null; AapSession.onBattery = null
-        AapSession.stop(); aapPods = null; aapWorn = null
-        } else AapSession.start(this, adapter, dev)
+            AapSession.stop(); aapPods = null; aapWorn = null
+        } else {
+            // 끊김 분기에서 지운 콜백을 연결 때마다 다시 등록(한 번만 등록하면 첫 연결 전에 지워져 배터리가 화면에 안 옴 — 실기기 재현)
+            registerAap()
+            AapSession.start(this, adapter, dev)
+        }
     }
 
     @SuppressLint("MissingPermission")
