@@ -107,6 +107,13 @@ class Prefs(context: Context) {
             i.firmware, i.leftSerial, i.rightSerial).joinToString("\u001F"))
     }
 
+    /** 에어팟이 AACP(0x31)로 알려준 BLE 광고 암호화 키(기기별). 없으면 null. 화면·로그에 값을 보이지 않는다. */
+    fun bleEncKey(deviceKey: String): ByteArray? =
+        sp.getString("ble_enc_$deviceKey", null)?.chunked(2)?.map { it.toInt(16).toByte() }?.toByteArray()
+    fun saveBleEncKey(deviceKey: String, key: ByteArray) = sp.edit {
+        putString("ble_enc_$deviceKey", key.joinToString("") { "%02X".format(it) })
+    }
+
     companion object {
         val MODELS = listOf("에어팟 1·2", "에어팟 프로", "파워비츠 프로", "에어팟 3", "에어팟 4")
         val PERCENT_TYPES = listOf("가장 닳은 기기 (케이스 포함)", "왼쪽", "오른쪽", "케이스")

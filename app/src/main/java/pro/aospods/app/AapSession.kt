@@ -55,6 +55,10 @@ object AapSession {
                         BtState.connectedName.value = m.name   // 에어팟이 알려준 실제 이름으로 표시
                     }
                 }
+                is Aap.Msg.Keys -> m.encKey?.let { k ->
+                    try { prefs.saveBleEncKey(key, k) } catch (_: Exception) {}
+                    PodsRepo.bleKeyVersion.value++
+                }
                 is Aap.Msg.Ear -> onEar?.invoke(m.wornCount)
                 is Aap.Msg.Batteries -> onBattery?.invoke(m.list)
                 is Aap.Msg.Other -> {}

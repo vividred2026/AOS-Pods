@@ -48,7 +48,7 @@ class AapClient(
         log("② 연결 성공 — 초기 메시지 전송")
 
         try {
-            for (p in listOf(Aap.HANDSHAKE, Aap.FEATURE_FLAGS, Aap.REQUEST_NOTIFICATIONS)) {
+            for (p in listOf(Aap.HANDSHAKE, Aap.FEATURE_FLAGS, Aap.REQUEST_NOTIFICATIONS, Aap.KEYS_REQUEST)) {
                 send(p); Thread.sleep(200)
             }
             onConnected()

@@ -16,12 +16,16 @@ object Aap {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
     /** 착용·배터리 등 알림을 받겠다는 요청. */
     val REQUEST_NOTIFICATIONS = bytes(0x04, 0x00, 0x04, 0x00, 0x0F, 0x00, 0xFF, 0xFF, 0xFF, 0xFF)
+    /** BLE 키 요청(0x30): 에어팟이 IRK(주소 식별 키)와 광고 암호화 키를 0x31로 돌려준다.
+     *  최신 에어팟(에어팟 4 등)은 BLE 광고의 배터리·착용 정보를 암호화해 보내므로, 이 키가 있어야 AACP 없이도 읽을 수 있다. */
+    val KEYS_REQUEST = bytes(0x04, 0x00, 0x04, 0x00, 0x30, 0x00, 0x05, 0x00)
 
     const val OP_BATTERY = 0x04
     const val OP_EAR = 0x06
     const val OP_CONTROL = 0x09
     const val OP_RENAME = 0x1A
     const val OP_INFO = 0x1D
+    const val OP_KEYS = 0x31
 
     /** 이름 최대 길이(UTF-8 바이트). 너무 긴 이름은 기기마다 잘리거나 거부될 수 있어 보수적으로 제한. */
     const val NAME_MAX_BYTES = 32
@@ -50,7 +54,7 @@ object Aap {
     /** 청취 모드 변경 요청: 04 00 04 00 09 00 0D [mode] 00 00 00 (에어팟도 같은 형식으로 현재 모드를 알림). */
     fun listenModePacket(mode: Int) = bytes(0x04, 0x00, 0x04, 0x00, OP_CONTROL, 0x00, CTRL_LISTEN_MODE, mode, 0x00, 0x00, 0x00)
     /** 주소·일련번호가 들어 있어 진단 화면에 원문을 보이지 않는 메시지. */
-    val PRIVATE_OPS = setOf(0x0B, 0x0C, 0x0E, 0x1D)
+    val PRIVATE_OPS = setOf(0x0B, 0x0C, 0x0E, 0x1D, OP_KEYS)
 
     enum class Part { LEFT, RIGHT, CASE, SINGLE, UNKNOWN }
     data class Battery(val part: Part, val level: Int, val charging: Boolean, val connected: Boolean)
@@ -70,6 +74,8 @@ object Aap {
             val serial: String, val firmware: String,
             val leftSerial: String, val rightSerial: String,
         ) : Msg()
+        /** BLE 키(0x31). 비밀값이므로 로그·진단에는 길이만 남긴다. */
+        data class Keys(val irk: ByteArray?, val encKey: ByteArray?) : Msg()
         data class Other(val opcode: Int) : Msg()
     }
 
@@ -103,11 +109,30 @@ object Aap {
                 Msg.Ear(place(p[6].u()), place(p[7].u()))
             }
             OP_INFO -> parseInfo(p)
+            OP_KEYS -> parseKeys(p)
             OP_CONTROL -> {
                 if (p.size >= 8 && p[6].u() == CTRL_LISTEN_MODE) Msg.ListenMode(p[7].u()) else Msg.Other(op)
             }
             else -> Msg.Other(op)
         }
+    }
+
+    /** 0x31: [04 00 04 00 31 00][개수] 그리고 항목마다 [종류][00][길이][00][키 바이트…]. 종류 01 = IRK, 04 = 암호화 키. */
+    private fun parseKeys(p: ByteArray): Msg? {
+        if (p.size < 7) return null
+        val n = p[6].u()
+        var o = 7
+        var irk: ByteArray? = null
+        var enc: ByteArray? = null
+        repeat(n) {
+            if (o + 3 >= p.size) return@repeat
+            val type = p[o].u(); val len = p[o + 2].u()
+            o += 4
+            if (len <= 0 || o + len > p.size) return@repeat
+            val key = p.copyOfRange(o, o + len); o += len
+            when (type) { 0x01 -> irk = key; 0x04 -> enc = key }
+        }
+        return Msg.Keys(irk, enc)
     }
 
     /** 0x1D: [04 00 04 00 1D 00][바이너리 헤더][문자열\0]… — 0으로 나눈 조각 중
@@ -146,6 +171,7 @@ object Aap {
         is Msg.Ear -> "착용: 주 유닛 ${placeName(m.primary)} · 보조 ${placeName(m.secondary)} → 끼고 있는 개수 ${m.wornCount}"
         is Msg.ListenMode -> "청취 모드: ${modeName(m.mode)}"
         is Msg.Info -> "기기 정보: ${m.name} · ${m.modelNumber} · 펌웨어 ${m.firmware}"   // 일련번호는 로그에 남기지 않음
+        is Msg.Keys -> "BLE 키 수신: IRK ${m.irk?.size ?: 0}B · 광고 암호화 키 ${m.encKey?.size ?: 0}B (값은 기록하지 않음)"
         is Msg.Other -> "기타 메시지 0x%02X".format(m.opcode)
     }
 

@@ -79,4 +79,19 @@ class AapTest {
         assertEquals(0x0F, Aap.opcode(Aap.REQUEST_NOTIFICATIONS))
         assertEquals(0x4D, Aap.opcode(Aap.FEATURE_FLAGS))
     }
+
+    @Test fun parsesBleKeys() {
+        val irk = ByteArray(16) { (it + 1).toByte() }
+        val enc = ByteArray(16) { (0x40 + it).toByte() }
+        val p = byteArrayOf(0x04, 0x00, 0x04, 0x00, 0x31, 0x00, 0x02,
+            0x01, 0x00, 0x10, 0x00) + irk + byteArrayOf(0x04, 0x00, 0x10, 0x00) + enc
+        val m = Aap.parse(p) as Aap.Msg.Keys
+        assertArrayEquals(irk, m.irk); assertArrayEquals(enc, m.encKey)
+        assert(Aap.OP_KEYS in Aap.PRIVATE_OPS)
+        assert(!Aap.describe(m).contains("40 41"))   // 키 값은 로그에 남기지 않음
+        // 새 펌웨어 응답 예(키 하나만): 31 00 02 01 00 10 00 [16B] — 두 번째 항목이 없어도 멈추지 않음
+        val one = byteArrayOf(0x04, 0x00, 0x04, 0x00, 0x31, 0x00, 0x02, 0x01, 0x00, 0x10, 0x00) + irk
+        assertArrayEquals(irk, (Aap.parse(one) as Aap.Msg.Keys).irk)
+        assertEquals(byteArrayOf(0x04, 0x00, 0x04, 0x00, 0x30, 0x00, 0x05, 0x00).toList(), Aap.KEYS_REQUEST.toList())
+    }
 }

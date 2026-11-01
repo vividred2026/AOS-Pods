@@ -38,6 +38,17 @@ object PodsRepo {
     @Volatile var diagLine: String = ""
     /** 진단용: 최근 서로 다른 0x07 원문(최대 6개, "RSSI 원문"). 왼쪽 누락 등 판정용. */
     val recentRaw = ArrayDeque<String>()
+    /** 실험: 암호화 광고(0x07 길이 0x11 등)를 AACP 키로 복호화한 결과 — 서로 다른 것 최대 8개("원문 꼬리 → 복호화"). */
+    val recentDecrypted = ArrayDeque<String>()
+    /** 복호화에 쓸 키가 있는지 등 진단용 메모. */
+    @Volatile var bleKeyNote: String = "키 없음"
+    /** AACP로 새 키를 받으면 1 증가(서비스가 키를 다시 읽음). */
+    val bleKeyVersion = MutableStateFlow(0)
+    fun addDecrypted(line: String) = synchronized(recentDecrypted) {
+        if (recentDecrypted.contains(line)) return@synchronized
+        recentDecrypted.addLast(line)
+        while (recentDecrypted.size > 8) recentDecrypted.removeFirst()
+    }
     fun update(p: Pods?) { _pods.value = p }
 
     fun addRecent(hex: String, rssi: Int) = synchronized(recentRaw) {
@@ -108,6 +119,23 @@ class ScanService : Service() {
         }
     }
 
+    /** 실험: 암호화된 0x07 광고를 연결된 에어팟의 키(AACP 0x31로 받아 저장)로 풀어 진단에 남긴다. 해석은 아직 안 함. */
+    private var encKeyFor: String? = null
+    private var encKey: ByteArray? = null
+    private var encKeySeenVersion = -1
+    private fun tryDecrypt(p: ByteArray) {
+        val addr = try { BtState.connectedDevice?.address } catch (_: Exception) { null } ?: run { PodsRepo.bleKeyNote = "연결된 에어팟 없음"; return }
+        val v = PodsRepo.bleKeyVersion.value
+        if (encKeyFor != addr || encKey == null || encKeySeenVersion != v) {   // 기기가 바뀌었거나 AACP로 새 키를 받았으면 다시 읽음
+            encKeyFor = addr; encKeySeenVersion = v; encKey = prefs.bleEncKey(addr)
+        }
+        val k = encKey ?: run { PodsRepo.bleKeyNote = "키 없음(에어팟 전용 채널이 열리면 자동 수신)"; return }
+        val d = AirPodsParser.decryptTail(p, k) ?: run { PodsRepo.bleKeyNote = "키 있음 · 복호화 실패"; return }
+        PodsRepo.bleKeyNote = "키 있음 · 복호화 중"
+        val tail = p.copyOfRange(p.size - 16, p.size).joinToString("") { "%02X".format(it) }
+        PodsRepo.addDecrypted("${tail.take(8)}… → " + d.joinToString(" ") { "%02X".format(it) })
+    }
+
     private val callback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             try {
@@ -125,6 +153,7 @@ class ScanService : Service() {
                     PodsRepo.lastRssi = result.rssi
                     PodsRepo.rawCount = c07
                     PodsRepo.addRecent(last07Hex, result.rssi)
+                    if (len != 0x19) tryDecrypt(p)
                 }
                 // 이 폰에 에어팟(오디오 기기)이 연결돼 있을 때만 배터리 처리
                 if (BtState.connectedName.value == null) return

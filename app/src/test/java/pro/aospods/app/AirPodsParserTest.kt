@@ -76,3 +76,16 @@ class ProximityLengthTest {
         org.junit.Assert.assertNull(ModelDetect.fromProximity(raw))
     }
 }
+
+class DecryptTailTest {
+    @org.junit.Test fun roundTrip() {
+        val key = ByteArray(16) { (it * 7).toByte() }
+        val plain = ByteArray(16) { (0x10 + it).toByte() }
+        val c = javax.crypto.Cipher.getInstance("AES/ECB/NoPadding")
+        c.init(javax.crypto.Cipher.ENCRYPT_MODE, javax.crypto.spec.SecretKeySpec(key, "AES"))
+        val msg = byteArrayOf(0x07, 0x11, 0x06) + c.doFinal(plain)   // 에어팟 4 형식: 1바이트 + 암호화 16바이트
+        org.junit.Assert.assertArrayEquals(plain, AirPodsParser.decryptTail(msg, key))
+        org.junit.Assert.assertNull(AirPodsParser.decryptTail(msg, ByteArray(15)))
+        org.junit.Assert.assertNull(AirPodsParser.decryptTail(byteArrayOf(0x07, 0x02, 0x01), key))
+    }
+}

@@ -21,6 +21,18 @@ data class Pods(
 object AirPodsParser {
     private const val APPLE_ID = 76 // 0x004C
 
+    /** 0x07 메시지의 마지막 16바이트를 AACP로 받은 키로 AES(ECB) 복호화.
+     *  길이 0x19 광고는 앞 9바이트 공개 + 뒤 16바이트 암호화, 길이 0x11(에어팟 4 등)은 1바이트 + 16바이트 암호화로 보임.
+     *  형식 확인 중인 실험 기능 — 결과 16바이트를 그대로 돌려주고 해석은 하지 않는다. 실패하면 null. */
+    fun decryptTail(msg: ByteArray, key: ByteArray): ByteArray? {
+        if (msg.size < 18 || (msg[0].toInt() and 0xFF) != 0x07 || key.size != 16) return null
+        return try {
+            val c = javax.crypto.Cipher.getInstance("AES/ECB/NoPadding")
+            c.init(javax.crypto.Cipher.DECRYPT_MODE, javax.crypto.spec.SecretKeySpec(key, "AES"))
+            c.doFinal(msg.copyOfRange(msg.size - 16, msg.size))
+        } catch (_: Exception) { null }
+    }
+
     /** 애플 광고는 [유형][길이][내용] 메시지가 이어붙어 올 수 있음 — 0x07(근접 페어링) 메시지만 추출. */
     fun findProximity(data: ByteArray): ByteArray? {
         var i = 0

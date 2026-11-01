@@ -676,6 +676,10 @@ class MainActivity : AppCompatActivity() {
                 appendLine("최근 서로 다른 원문(RSSI 원문):")
                 recent.forEach { appendLine(it) }
             }
+            val dec = synchronized(PodsRepo.recentDecrypted) { PodsRepo.recentDecrypted.toList() }
+            appendLine()
+            appendLine("암호화 광고 복호화(실험): ${PodsRepo.bleKeyNote}")
+            dec.forEach { appendLine(it) }
         }
         // 진단정보 시트 (Figma 1216:5169): 오른쪽 위 [AACP 테스트] · 하단 [복사] [닫기]
         val s = Sheets.base(this, "진단 정보").link("AACP 테스트") { showAapExperiment() }
