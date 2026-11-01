@@ -116,5 +116,21 @@ class ScreenshotTest {
         BtState.connectedName.value = null
     }
 
+    /** 런처 아이콘(적응형, Figma 1240:3505): 전체 캔버스 · 원형 마스크 두 가지로 그려 확인. */
+    @Test fun launcherIcon() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val d = a.getDrawable(R.mipmap.ic_launcher)!!
+        val size = 432
+        val full = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        d.setBounds(0, 0, size, size); d.draw(Canvas(full))
+        File(out, "icon_full.png").outputStream().use { full.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        // 원형 마스크(안전 영역 66/108)
+        val round = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val c = Canvas(round)
+        val path = android.graphics.Path().apply { addCircle(size / 2f, size / 2f, size * 33f / 108f, android.graphics.Path.Direction.CW) }
+        c.clipPath(path); d.draw(c)
+        File(out, "icon_round.png").outputStream().use { round.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     @Test fun notifSettings() = shot(Robolectric.buildActivity(NotifSettingsActivity::class.java).setup().get(), "n01_notif")
 }
