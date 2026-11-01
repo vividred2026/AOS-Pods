@@ -4,15 +4,31 @@ plugins {
 }
 android {
   namespace 'pro.aospods.app'
-  compileSdk 34
+  compileSdk 36
   defaultConfig {
     applicationId "pro.aospods.app"
     minSdk 26
-    targetSdk 34
+    targetSdk 36   // 구글 플레이 신규 앱 요구(2026-08-31 이후 36)
     versionCode 1
     versionName "1.0"
     // 화면 맨 아래·진단 정보에 표시할 빌드 번호(CI는 커밋 앞 7자리) — 어떤 APK가 설치됐는지 확인용
     buildConfigField "String", "BUILD_ID", "\"${(System.getenv('GITHUB_SHA') ?: 'local').take(7)}\""
+  }
+  // 두 갈래(같은 코드, 같은 저장소):
+  //  play = 플레이 스토어용. 숨김 API 우회·AACP(실시간 착용·1% 배터리·청취 모드·에어팟 정보) 없음
+  //  full = 사이드로드 전용 전체 기능. 패키지에 .full을 붙여 play와 나란히 설치 가능
+  flavorDimensions = ["dist"]
+  productFlavors {
+    play {
+      dimension "dist"
+      buildConfigField "boolean", "AACP", "false"
+    }
+    full {
+      dimension "dist"
+      applicationIdSuffix ".full"
+      versionNameSuffix "-full"
+      buildConfigField "boolean", "AACP", "true"
+    }
   }
   buildFeatures { viewBinding true; buildConfig true }
   // 숨김 API 우회 라이브러리 사용 정보는 APK에 넣지 않음(라이브러리 권장 설정)
@@ -31,10 +47,23 @@ android {
       keyAlias 'androiddebugkey'
       keyPassword 'android'
     }
+    // 릴리스(플레이 업로드) 키: CI 비밀값으로 주입. 없으면 서명하지 않은 AAB가 나온다(플레이 콘솔은 서명된 것만 받음)
+    release {
+      def ks = System.getenv('RELEASE_KEYSTORE_FILE')
+      if (ks) {
+        storeFile file(ks)
+        storePassword System.getenv('RELEASE_KEYSTORE_PASSWORD')
+        keyAlias System.getenv('RELEASE_KEY_ALIAS')
+        keyPassword System.getenv('RELEASE_KEY_PASSWORD')
+      }
+    }
   }
   buildTypes {
     debug { signingConfig signingConfigs.debug }
-    release { minifyEnabled false }
+    release {
+      minifyEnabled false
+      if (System.getenv('RELEASE_KEYSTORE_FILE')) signingConfig signingConfigs.release
+    }
   }
 }
 dependencies {
@@ -48,6 +77,6 @@ dependencies {
   implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
   implementation 'androidx.lifecycle:lifecycle-service:2.8.4'
   implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
-  // 블루투스 숨김 API(AACP 소켓·배터리 조회) 접근 — Apache 2.0
-  implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
+  // 블루투스 숨김 API(AACP 소켓·배터리 조회) 접근 — Apache 2.0. full 갈래에만 포함(플레이 정책)
+  fullImplementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 }

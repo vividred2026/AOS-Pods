@@ -130,7 +130,8 @@ class MainActivity : AppCompatActivity() {
                         a -> "실시간 착용 감지 사용 중 (에어팟 전용 채널)"
                         w == true -> "착용 신호 수신 중"
                         w == false -> "에어팟이 착용 신호를 보내지 않고 있어요 — " +
-                            "이 폰·모델에서는 착용 감지가 동작하지 않을 수 있어요"
+                            (if (BuildConfig.AACP) "이 폰·모델에서는 착용 감지가 동작하지 않을 수 있어요"
+                             else "플레이 스토어 버전은 이 모델의 착용 감지를 지원하지 않아요")
                         else -> "에어팟 연결 후 착용 신호를 확인해요"
                     }
                 }
@@ -609,6 +610,7 @@ class MainActivity : AppCompatActivity() {
     /** BluetoothA2dp/BluetoothHeadset.connect(device) — 숨김 API. 12+에선 권한(BLUETOOTH_PRIVILEGED) 때문에 거부될 수 있어 결과를 기록만 함. */
     @android.annotation.SuppressLint("MissingPermission")
     private fun connectProfiles(dev: android.bluetooth.BluetoothDevice) {
+        if (!BuildConfig.AACP) { bondAppend("플레이 버전: 프로파일 직접 연결은 시도하지 않아요(비공개 API)"); return }
         val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter ?: return
         HiddenApi.allowBluetooth()
         for ((profile, label) in listOf(android.bluetooth.BluetoothProfile.A2DP to "음악", android.bluetooth.BluetoothProfile.HEADSET to "통화")) {
@@ -676,7 +678,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // 진단정보 시트 (Figma 1216:5169): 오른쪽 위 [AACP 테스트] · 하단 [복사] [닫기]
-        val s = Sheets.base(this, "진단 정보").link("AACP 테스트") { showAapExperiment() }
+        val s = Sheets.base(this, "진단 정보")
+        if (BuildConfig.AACP) s.link("AACP 테스트") { showAapExperiment() }   // 플레이 갈래엔 AACP가 없어 링크도 없음
         s.text(text)
         s.buttons("복사", { copy("aospods", text, "진단 정보를 복사했습니다") }, "닫기", { s.dialog.dismiss() })
         s.dialog.show()

@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/splash_bg"
-    android:fitsSystemWindows="true"
     android:paddingHorizontal="18dp"
     android:paddingVertical="16dp">
 

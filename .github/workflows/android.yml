@@ -19,21 +19,51 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: 단위 테스트
+      - name: 단위 테스트 (full 갈래 · 화면 캡처 포함)
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --stacktrace 2>&1 | tee test.log || {
+          ./gradlew :app:testFullDebugUnitTest --stacktrace 2>&1 | tee test.log || {
             # 로그 저장소에 접근할 수 없는 환경에서도 원인을 볼 수 있게 실패 줄을 주석(annotation)으로 남김
             grep -E "^e: |error:|FAILED|Exception|Caused by" test.log | head -30 | while IFS= read -r l; do echo "::error::$l"; done
             exit 1; }
+      - name: 단위 테스트 (play 갈래)
+        run: |
+          set -o pipefail
+          ./gradlew :app:testPlayDebugUnitTest 2>&1 | tee test-play.log || {
+            grep -E "^e: |error:|FAILED|Exception|Caused by" test-play.log | head -30 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1; }
       - name: 린트
-        run: ./gradlew :app:lintDebug
-      - name: 디버그 APK 빌드
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew :app:lintFullDebug :app:lintPlayDebug
+      - name: 디버그 APK 빌드 (full · play)
+        run: ./gradlew :app:assembleFullDebug :app:assemblePlayDebug
+      - name: 플레이 스토어용 릴리스 AAB (play)
+        env:
+          # 저장소 Secrets에 릴리스 키를 넣으면 서명된 AAB, 없으면 서명 없는 AAB가 나온다
+          RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$RELEASE_KEYSTORE_B64" ]; then
+            echo "$RELEASE_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export RELEASE_KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
+            echo "릴리스 키로 서명합니다"
+          else
+            echo "::warning::릴리스 키 Secrets가 없어 서명하지 않은 AAB를 만듭니다(플레이 콘솔 업로드 전 서명 필요)"
+          fi
+          ./gradlew :app:bundlePlayRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: app-full-debug-apk
+          path: app/build/outputs/apk/full/debug/app-full-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-play-debug-apk
+          path: app/build/outputs/apk/play/debug/app-play-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-play-release-aab
+          path: app/build/outputs/bundle/playRelease/app-play-release.aab
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -51,14 +81,17 @@ jobs:
               r = E.parse(p).getroot(); t += int(r.get('tests')); f += int(r.get('failures')) + int(r.get('errors'))
           print(f"### 단위 테스트: {t}개 중 실패 {f}개")
           PY
-      - name: 최신 APK를 릴리스로 게시 (main push)
+      - name: 최신 빌드를 릴리스로 게시 (main push)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk AosPods-debug.apk
+          cp app/build/outputs/apk/full/debug/app-full-debug.apk AosPods-full-debug.apk
+          cp app/build/outputs/apk/play/debug/app-play-debug.apk AosPods-play-debug.apk
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab AosPods-play-release.aab
           gh release delete latest --yes --cleanup-tag || true
           (cd app/build/screens 2>/dev/null && zip -q ../../../screens.zip *.png *.txt) || true
-          gh release create latest AosPods-debug.apk $( [ -f screens.zip ] && echo screens.zip ) --prerelease \
+          gh release create latest AosPods-full-debug.apk AosPods-play-debug.apk AosPods-play-release.aab \
+            $( [ -f screens.zip ] && echo screens.zip ) --prerelease \
             --title "최신 디버그 빌드 (${GITHUB_SHA::7})" \
-            --notes "main 브랜치 최신 커밋 ${GITHUB_SHA::7}의 디버그 서명 APK입니다. 폰에서 내려받아 설치하세요."
+            --notes "main 브랜치 최신 커밋 ${GITHUB_SHA::7}. full = 전체 기능(사이드로드, 패키지 pro.aospods.app.full) · play = 플레이 스토어 갈래(AACP 없음). AAB는 플레이 콘솔 업로드용."

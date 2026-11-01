@@ -39,11 +39,13 @@ object BtState {
     /** 시스템이 알고 있는 기기 배터리(숨김 API라 반사로 호출, 막혀 있거나 모르면 null). */
     @SuppressLint("MissingPermission")
     fun readBattery(d: BluetoothDevice): Int? = try {
+        // 플레이 갈래는 비공개 API를 건드리지 않음(공개 경로 ①②만 사용)
+        if (!BuildConfig.AACP) throw UnsupportedOperationException("play")
         val v = d.javaClass.getMethod("getBatteryLevel").invoke(d) as Int
         if (v in 0..100) { batteryNote = "시스템 조회 $v%"; v }
         else { batteryNote = "시스템 조회: 값 없음($v)"; null }
     } catch (e: Throwable) {
-        batteryNote = "시스템 조회 불가(${(e.cause ?: e).javaClass.simpleName})"; null
+        batteryNote = if (!BuildConfig.AACP) "플레이 버전 · 시스템 조회 안 함" else "시스템 조회 불가(${(e.cause ?: e).javaClass.simpleName})"; null
     }
 
     /** 에어팟이 HFP로 직접 보내는 AT+IPHONEACCEV=n,k1,v1,... 에서 배터리(키 1, 0~9)를 %로.
