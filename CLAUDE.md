@@ -12,6 +12,7 @@
 - 패키지: `pro.aospods.app` · 버전 1.0 (versionCode 1)
 - minSdk 26 · targetSdk/compileSdk 34 · Kotlin · View + viewBinding · Material Components
 - 앱 이름과 화면은 한국어 전용
+- **안드로이드 전용** — iOS 버전은 만들지 않음(사용자 결정 2026-11-01). 아이콘·디자인 참조 시 iOS 규격은 무시
 
 ---
 
