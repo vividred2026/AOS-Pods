@@ -97,7 +97,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 ```
 
 ### 디자인 시스템 (Figma `++ aosPods - Complete` 페이지 아래쪽 보라 테마 화면, 2026-10-31 적용)
-- **브랜드 보라 `#6B00DE`**(`@color/accent`, 다크 `#A27BEF`) — 스위치 트랙·카테고리·[연결]·칩·버튼. 옛 주황(`orange`)은 전부 `accent`로 교체
+- **브랜드 보라 `#6B00DE`**(2026-11-01 `#5D22BB`에서 변경, 앱·Figma 페이지 전체 일괄 교체 — `@color/accent`, 다크 `#A27BEF`는 유지) — 스위치 트랙·카테고리·[연결]·칩·버튼. 옛 주황(`orange`)은 전부 `accent`로 교체
 - **폰트 Pretendard**(OFL, `res/font/pretendard*.ttf` — 자주 쓰는 한글 2,350자+영문·기호로 줄이고 TrueType으로 변환, 약 2.5MB, 라이선스 `assets/licenses/Pretendard-OFL.txt`). 없는 글자는 시스템 폰트로 대체
   - ⚠️ 테마에는 `android:fontFamily`만 둘 것. `app:fontFamily`(AppCompat)를 테마에 넣으면 뷰별 `android:fontFamily="@font/pretendard_bold"` 등이 무시돼 모든 굵기가 Regular로 보임(실제로 겪음)
 - 로고·아이콘은 Figma 노드를 `exportAsync(SVG)`로 받아 VectorDrawable로 변환(`logo_bar` 메인 앱바 `1240:3462` 108×40(왼쪽 20) · `logo_perm` S-02 `1240:3442` 125×46 · `logo_splash` S-01 `1240:3351` 184×117 — 2026-11-01 수정본(로고 아래 14dp에 "자유를 얻은 에어팟!" 16 Medium) · `logo_befree` S-01 · `ic_check_box_*` · `ic_check_circle_*` · `ic_close`). figma.com 에셋 URL은 이 환경에서 막혀 있음
