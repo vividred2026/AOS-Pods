@@ -124,10 +124,10 @@ class ScreenshotTest {
         val full = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         d.setBounds(0, 0, size, size); d.draw(Canvas(full))
         File(out, "icon_full.png").outputStream().use { full.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        // 원형 마스크(안전 영역 66/108)
+        // 원형 마스크: AdaptiveIconDrawable은 108dp 레이어 중 가운데 72dp만 보이므로 안전 영역 66dp 원 = 반지름 33/72
         val round = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val c = Canvas(round)
-        val path = android.graphics.Path().apply { addCircle(size / 2f, size / 2f, size * 33f / 108f, android.graphics.Path.Direction.CW) }
+        val path = android.graphics.Path().apply { addCircle(size / 2f, size / 2f, size * 33f / 72f, android.graphics.Path.Direction.CW) }
         c.clipPath(path); d.draw(c)
         File(out, "icon_round.png").outputStream().use { round.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
