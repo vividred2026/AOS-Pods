@@ -10,7 +10,8 @@
 **안드로이드 폰과 에어팟을 페어링하고, 연결된 에어팟의 배터리·충전·착용 상태를 보여주는 앱.**
 
 - 패키지: `pro.aospods.app` · 버전 1.0 (versionCode 1) · **표기 이름 `aosPods`**(2026-11-01, 앱 라벨·알림 제목·채널·타일·하단 빌드 줄·개인정보 본문 — 테마/스타일 이름 `Theme.AosPods`는 그대로)
-- minSdk 26 · targetSdk/compileSdk 34 · Kotlin · View + viewBinding · Material Components
+- minSdk 26 · **targetSdk/compileSdk 36**(2026-11-01, 플레이 요구 · AGP 8.9.1 · Gradle 8.11.1) · Kotlin · View + viewBinding · Material Components
+- **두 갈래(product flavor, 같은 저장소·같은 코드, 2026-11-01)**: `play` = 플레이 스토어용(`pro.aospods.app`, 숨김 API 우회·AACP 없음) / `full` = 사이드로드 전체 기능(`pro.aospods.app.full`, 버전 `1.0-full`, 나란히 설치 가능). AACP 코드(`AapClient.kt`·`HiddenApi.kt`)는 `src/full/`에, `src/play/`에는 같은 이름의 스텁(연결 실패 안내만). `BuildConfig.AACP`로 분기: HFP 배터리 반사 조회(`BtState.readBattery`), 페어링 후 프로파일 직접 연결(`connectProfiles`), 진단의 [AACP 테스트] 링크, 착용 감지 안내 문구. `hiddenapibypass`는 `fullImplementation`. targetSdk 35+ 엣지투엣지는 `AosApp`이 모든 화면 content 뷰에 시스템 바 여백을 넣어 처리. Robolectric은 `src/test/resources/robolectric.properties`로 SDK 34 고정. 위치 권한은 `maxSdkVersion=30`
 - 앱 이름과 화면은 한국어 전용
 - **안드로이드 전용** — iOS 버전은 만들지 않음(사용자 결정 2026-11-01). 아이콘·디자인 참조 시 iOS 규격은 무시
 
@@ -171,7 +172,7 @@ app/src/test/  — 단위 테스트 + Robolectric
   - ⚠️ **정보(0x1D)는 연결 직후 한 번만 오고 요청 불가**(LibrePods `docs/device-info.md`). 그래서 기기별로 `Prefs.saveAapInfo`에 저장 → 다음 연결 때 먼저 보여 주고 "마지막으로 받은 정보"로 표시(`AapSession.infoFresh`). 실기기에서 정보가 안 보였던 원인: 메모리에만 두고 재시작 시 사라짐 + 로그 80줄이 반복 메시지에 밀림.
   - 실기기 로그로 확인된 기타 메시지: `08` 버드 역할, `0E`(주소 포함)·`55 00 01 01 00 [19|32]`가 몇 초마다 반복, `17` 수백 B(헤드트래킹 등), `2E` 연결 기기 목록, `52`. 배터리 `04` 수신 확인(왼·오 100%, 케이스 04=연결 안 됨).
   - AACP 로그: 해석 안 하는 메시지는 같은 내용이면 1회만 기록, 버퍼 200줄, 수신 버퍼 8KB(큰 메시지 잘림 방지).
-- 화면 맨 아래 `aosPods 1.0 · 빌드 <커밋 7자리>`(`BuildConfig.BUILD_ID`, CI의 `GITHUB_SHA`) — 사용자가 어떤 APK를 설치했는지 확인용. 진단·AACP 로그 첫 줄에도 표시.
+- 화면 맨 아래 `aosPods 1.0(-full) · 빌드 <커밋 7자리>`(`BuildConfig.BUILD_ID`, CI의 `GITHUB_SHA`) — 사용자가 어떤 APK를 설치했는지 확인용. 진단·AACP 로그 첫 줄에도 표시.
 
 ### (참고) BLE 방식 착용 감지의 한계
 - 원인: 착용 정보는 **BLE 0x07 광고 안에만** 있는데, 에어팟을 **귀에 끼고 연결·재생 중일 때 0x07이 0건** 수신됨
@@ -246,15 +247,24 @@ app/src/test/  — 단위 테스트 + Robolectric
 ## 9. 빌드 · 테스트
 
 ```bash
-# 테스트 + 린트 + 디버그 APK
-./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
-# 결과물: app/build/outputs/apk/debug/app-debug.apk (디버그 서명)
+# 테스트 + 린트 + 디버그 APK (full 갈래 — 화면 캡처 테스트 포함)
+./gradlew :app:testFullDebugUnitTest :app:lintFullDebug :app:assembleFullDebug
+# 플레이 갈래
+./gradlew :app:testPlayDebugUnitTest :app:lintPlayDebug :app:assemblePlayDebug :app:bundlePlayRelease
+# 결과물: app/build/outputs/apk/{full,play}/debug/app-{full,play}-debug.apk · app/build/outputs/bundle/playRelease/app-play-release.aab
 ```
 
-- gradle wrapper(8.9) 포함. **GitHub Actions**(`.github/workflows/android.yml`)가 push마다 테스트·린트·디버그 APK를 빌드하고 `app-debug-apk` 아티팩트로 올립니다.
+### 플레이 스토어 등록 절차 (play 갈래)
+1. **릴리스 키 만들기**(한 번, 잃어버리면 업데이트 불가 — 안전하게 보관):
+   `keytool -genkeypair -v -keystore release.jks -alias aospods -keyalg RSA -keysize 2048 -validity 10000`
+2. 깃허브 저장소 Settings → Secrets에 `RELEASE_KEYSTORE_B64`(`base64 -w0 release.jks`) · `RELEASE_KEYSTORE_PASSWORD` · `RELEASE_KEY_ALIAS` · `RELEASE_KEY_PASSWORD` 등록 → 이후 CI가 **서명된** `AosPods-play-release.aab`를 릴리스 `latest`에 올림(비밀값이 없으면 서명 없는 AAB + 경고)
+3. 플레이 콘솔: 개발자 계정 → 앱 만들기 → 개인정보처리방침 **공개 URL**(앱 안 시트 문구를 그대로 웹에) → 데이터 안전(수집 없음) → 포그라운드 서비스 `connectedDevice` 용도 설명·시연 영상 → 비공개 테스트(개인 계정은 테스터 20명·14일) → 프로덕션
+4. 버전 올릴 때 `versionCode`를 1씩 증가(같은 값은 콘솔이 거부)
+
+- gradle wrapper(8.11.1) 포함. **GitHub Actions**(`.github/workflows/android.yml`)가 push마다 두 갈래 테스트·린트, `app-full-debug-apk`·`app-play-debug-apk`·`app-play-release-aab` 아티팩트, 릴리스 `latest`에 `AosPods-full-debug.apk`·`AosPods-play-debug.apk`·`AosPods-play-release.aab`·`screens.zip`을 올립니다.
 - 소스 zip에는 `local.properties`를 뺐습니다. Android Studio로 열면 SDK 경로가 자동으로 잡힙니다.
-- AGP 8.5.2 · Kotlin Android 플러그인 · JDK 17
-- 실기기 설치: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+- AGP 8.9.1 · Kotlin 1.9.24 · JDK 17
+- 실기기 설치: `adb install -r app/build/outputs/apk/full/debug/app-full-debug.apk` (full은 패키지가 `.full`이라 예전 `pro.aospods.app` 설치본과 별개 — 예전 것은 지워도 됨)
 - 디버그 APK는 리포의 고정 키 `app/debug.keystore`(비밀번호 android, 공개용 디버그 키)로 서명 → CI 빌드끼리 **덮어 설치 가능**. 이 키로 바꾸기 전 빌드는 한 번 삭제 후 설치 필요.
 
 ### 실기기 확인 팁
