@@ -106,8 +106,12 @@ class AapClient(
     /** 안드로이드 버전별 BluetoothSocket 숨김 생성자 시그니처를 차례로 시도. */
     @SuppressLint("DiscouragedPrivateApi", "SoonBlockedPrivateApi", "BlockedPrivateApi")
     private fun createSocket(): BluetoothSocket {
-        // 안드로이드 17+는 숨김 API 예외 없이는 생성자가 보이지 않음
-        if (!HiddenApi.allowBluetooth()) log("숨김 API 예외: ${HiddenApi.result}")
+        // 안드로이드 17+는 숨김 API 예외 없이는 생성자가 보이지 않음.
+        // 플레이 갈래는 우회 라이브러리 없이 일반 반사만 시도 → 허용된 폰에서만 열리고, 막힌 폰은 아래 실패 로그로 끝남
+        if (!HiddenApi.allowBluetooth()) {
+            log("숨김 API 예외: ${HiddenApi.result}")
+            if (!BuildConfig.AACP) log("플레이 버전은 숨김 API 우회를 쓰지 않아 이 폰에서는 열리지 않을 수 있어요 → 전체 버전(깃허브 릴리스)을 설치하면 돼요")
+        }
         val type = 3   // BluetoothSocket.TYPE_L2CAP
         val uuid = ParcelUuid.fromString(Aap.UUID)
         val i = Integer.TYPE

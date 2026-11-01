@@ -11,7 +11,7 @@
 
 - 패키지: `pro.aospods.app` · 버전 1.0 (versionCode 1) · **표기 이름 `aosPods`**(2026-11-01, 앱 라벨·알림 제목·채널·타일·하단 빌드 줄·개인정보 본문 — 테마/스타일 이름 `Theme.AosPods`는 그대로)
 - minSdk 26 · **targetSdk/compileSdk 36**(2026-11-01, 플레이 요구 · AGP 8.9.1 · Gradle 8.11.1) · Kotlin · View + viewBinding · Material Components
-- **두 갈래(product flavor, 같은 저장소·같은 코드, 2026-11-01)**: `play` = 플레이 스토어용(`pro.aospods.app`, 숨김 API 우회·AACP 없음) / `full` = 사이드로드 전체 기능(`pro.aospods.app.full`, 버전 `1.0-full`, 나란히 설치 가능). AACP 코드(`AapClient.kt`·`HiddenApi.kt`)는 `src/full/`에, `src/play/`에는 같은 이름의 스텁(연결 실패 안내만). `BuildConfig.AACP`로 분기: 페어링 후 프로파일 직접 연결(`connectProfiles`), 진단의 [AACP 테스트] 링크, 착용 감지·배터리 안내 문구. HFP 배터리 반사 조회(`BtState.readBattery`)는 우회 라이브러리가 아닌 일반 반사라 **플레이 갈래에서도 시도**(실기기 진단에서 플레이 빌드가 HFP 배터리를 전혀 못 받아 되살림 2026-11-01 — 삼성 SM-S937N은 공개 경로 ①②가 안 오는 것으로 보임). `hiddenapibypass`는 `fullImplementation`. targetSdk 35+ 엣지투엣지는 `AosApp`이 모든 화면 content 뷰에 시스템 바 여백을 넣어 처리. Robolectric은 `src/test/resources/robolectric.properties`로 SDK 34 고정. 위치 권한은 `maxSdkVersion=30`
+- **두 갈래(product flavor, 같은 저장소·같은 코드, 2026-11-01)**: `play` = 플레이 스토어용(`pro.aospods.app`) / `full` = 사이드로드 전체 기능(`pro.aospods.app.full`, 버전 `1.0-full`, 나란히 설치 가능). **차이는 단 하나 — 숨김 API 우회 라이브러리(`hiddenapibypass`, `fullImplementation`)와 그것을 부르는 `HiddenApi.kt`(`src/full/` 실제 · `src/play/` 스텁 = 항상 false).** AACP 클라이언트(`AapClient.kt`)·HFP 배터리 반사 조회·페어링 후 프로파일 직접 연결·[AACP 테스트]는 두 갈래 모두에 있고, 플레이 갈래는 우회 없이 일반 반사만 시도해 안드로이드가 허용하는 폰에서는 그대로 동작, 막힌 폰(삼성 SM-S937N 안드로이드 17 등)에서는 실패 로그로 끝남(사용자 요청 2026-11-01 "제한되는 것 외에 보여줄 수 있는 기능 모두 살려줘"). `BuildConfig.AACP`(=우회 가능 여부)는 안내 문구에만 쓰임. targetSdk 35+ 엣지투엣지는 `AosApp`이 모든 화면 content 뷰에 시스템 바 여백을 넣어 처리. Robolectric은 `src/test/resources/robolectric.properties`로 SDK 34 고정. 위치 권한은 `maxSdkVersion=30`
 - 앱 이름과 화면은 한국어 전용
 - **안드로이드 전용** — iOS 버전은 만들지 않음(사용자 결정 2026-11-01). 아이콘·디자인 참조 시 iOS 규격은 무시
 
@@ -259,11 +259,11 @@ app/src/test/  — 단위 테스트 + Robolectric
 
 | 갈래 | 패키지 | 내용 | 산출물(릴리스 `latest`) |
 |---|---|---|---|
-| `play` | `pro.aospods.app` | 플레이 스토어용. 숨김 API 우회·AACP 소켓 없음 | `AosPods-play-release.aab`, `AosPods-play-debug.apk` |
+| `play` | `pro.aospods.app` | 플레이 스토어용. 숨김 API **우회만** 없음(AACP는 일반 반사로 시도 — 허용 폰에서만 동작) | `AosPods-play-release.aab`, `AosPods-play-debug.apk` |
 | `full` | `pro.aospods.app.full` | 전체 기능(착용 감지·1% 배터리·청취 모드·에어팟 정보) — 사이드로드 | `AosPods-full-debug.apk` |
 
 - 앱 쪽 준비 완료: targetSdk 36 · 위치 권한 maxSdk 30 · 엣지투엣지 처리 · 두 갈래 CI 빌드·테스트·린트 · 서명 Secrets 있으면 서명된 AAB
-- 플레이 갈래 한계: 에어팟 프로 3처럼 BLE `07 19` 배터리 광고를 안 보내는 모델은 HFP 전체 배터리 하나만 보임. 착용 감지·청취 모드·에어팟 정보 메뉴 없음(안내 문구로 표시)
+- 플레이 갈래 한계: 숨김 API가 막힌 폰(삼성 안드로이드 17 실기기)에서는 AACP가 안 열려, 에어팟 프로 3처럼 BLE `07 19` 광고를 안 보내는 모델은 HFP 전체 배터리만 보이고 착용 감지·청취 모드·에어팟 정보가 없음(안내 문구로 표시). 실기기 진단(플레이 빌드 172571d): HFP 공개 경로 ①②도 안 와서 배터리 '없음'
 - **사용자가 할 일**
   1. 릴리스 키 생성 → 깃허브 Secrets 4개 등록(아래 절차 1·2). 현재는 키가 없어 **서명 안 된 AAB**
   2. 개인정보처리방침을 **공개 웹 주소**로 올리기(앱 시트 문구 그대로)

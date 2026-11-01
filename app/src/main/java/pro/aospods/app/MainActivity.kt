@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
                         w == true -> "착용 신호 수신 중"
                         w == false -> "에어팟이 착용 신호를 보내지 않고 있어요 — " +
                             (if (BuildConfig.AACP) "이 폰·모델에서는 착용 감지가 동작하지 않을 수 있어요"
-                             else "플레이 스토어 버전은 이 모델의 착용 감지를 지원하지 않아요")
+                             else "플레이 버전에서는 이 폰·모델의 착용 감지가 안 될 수 있어요(전체 버전은 가능)")
                         else -> "에어팟 연결 후 착용 신호를 확인해요"
                     }
                 }
@@ -218,7 +218,7 @@ class MainActivity : AppCompatActivity() {
             b.pairDetail.visibility = View.VISIBLE
             b.pairDetail.text = if (u.hfp != null) "전체 배터리 ${u.hfp}% · 케이스 뚜껑을 열면 R·L·C 표시"
                 else if (BuildConfig.AACP) "배터리 확인 중 · 케이스 뚜껑을 열면 R·L·C 표시"
-                else "배터리 확인 중 · 에어팟을 다시 연결하거나 케이스 뚜껑을 열어 보세요 (플레이 버전은 일부 모델의 배터리를 받지 못해요)"
+                else "배터리 확인 중 · 에어팟을 다시 연결하거나 케이스 뚜껑을 열어 보세요 (플레이 버전은 일부 폰·모델에서 배터리를 못 받을 수 있어요)"
         }
     }
 
@@ -611,7 +611,6 @@ class MainActivity : AppCompatActivity() {
     /** BluetoothA2dp/BluetoothHeadset.connect(device) — 숨김 API. 12+에선 권한(BLUETOOTH_PRIVILEGED) 때문에 거부될 수 있어 결과를 기록만 함. */
     @android.annotation.SuppressLint("MissingPermission")
     private fun connectProfiles(dev: android.bluetooth.BluetoothDevice) {
-        if (!BuildConfig.AACP) { bondAppend("플레이 버전: 프로파일 직접 연결은 시도하지 않아요(비공개 API)"); return }
         val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter ?: return
         HiddenApi.allowBluetooth()
         for ((profile, label) in listOf(android.bluetooth.BluetoothProfile.A2DP to "음악", android.bluetooth.BluetoothProfile.HEADSET to "통화")) {
@@ -679,8 +678,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // 진단정보 시트 (Figma 1216:5169): 오른쪽 위 [AACP 테스트] · 하단 [복사] [닫기]
-        val s = Sheets.base(this, "진단 정보")
-        if (BuildConfig.AACP) s.link("AACP 테스트") { showAapExperiment() }   // 플레이 갈래엔 AACP가 없어 링크도 없음
+        val s = Sheets.base(this, "진단 정보").link("AACP 테스트") { showAapExperiment() }
         s.text(text)
         s.buttons("복사", { copy("aospods", text, "진단 정보를 복사했습니다") }, "닫기", { s.dialog.dismiss() })
         s.dialog.show()
