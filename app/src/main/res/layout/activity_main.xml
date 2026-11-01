@@ -15,9 +15,10 @@
         <!-- 앱 바: AOS PODS 로고 (Figma 메인 AppBar · px16 py10) -->
         <ImageView
             android:id="@+id/appLogo"
-            android:layout_width="106dp"
+            android:layout_width="108dp"
             android:layout_height="40dp"
-            android:layout_marginHorizontal="16dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="16dp"
             android:layout_marginTop="16dp"
             android:src="@drawable/logo_bar"
             android:contentDescription="AOS PODS"/>
