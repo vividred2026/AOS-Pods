@@ -254,6 +254,22 @@ app/src/test/  — 단위 테스트 + Robolectric
 # 결과물: app/build/outputs/apk/{full,play}/debug/app-{full,play}-debug.apk · app/build/outputs/bundle/playRelease/app-play-release.aab
 ```
 
+### 📌 플레이 스토어 메모 (2026-11-01 사용자 요청: "플레이 스토어 이야기 꺼내면 이 내용 그대로 알려줘")
+**결론**: 지금 상태로 올릴 수 있는 갈래는 `play`(AACP 없음). 사용자가 할 일 3가지만 남음.
+
+| 갈래 | 패키지 | 내용 | 산출물(릴리스 `latest`) |
+|---|---|---|---|
+| `play` | `pro.aospods.app` | 플레이 스토어용. 숨김 API 우회·AACP 소켓 없음 | `AosPods-play-release.aab`, `AosPods-play-debug.apk` |
+| `full` | `pro.aospods.app.full` | 전체 기능(착용 감지·1% 배터리·청취 모드·에어팟 정보) — 사이드로드 | `AosPods-full-debug.apk` |
+
+- 앱 쪽 준비 완료: targetSdk 36 · 위치 권한 maxSdk 30 · 엣지투엣지 처리 · 두 갈래 CI 빌드·테스트·린트 · 서명 Secrets 있으면 서명된 AAB
+- 플레이 갈래 한계: 에어팟 프로 3처럼 BLE `07 19` 배터리 광고를 안 보내는 모델은 HFP 전체 배터리 하나만 보임. 착용 감지·청취 모드·에어팟 정보 메뉴 없음(안내 문구로 표시)
+- **사용자가 할 일**
+  1. 릴리스 키 생성 → 깃허브 Secrets 4개 등록(아래 절차 1·2). 현재는 키가 없어 **서명 안 된 AAB**
+  2. 개인정보처리방침을 **공개 웹 주소**로 올리기(앱 시트 문구 그대로)
+  3. 플레이 콘솔: 개발자 계정(25달러) → 앱 생성 → 데이터 안전(수집 없음) → 포그라운드 서비스 `connectedDevice` 용도 설명·시연 영상 → 비공개 테스트(개인 계정 테스터 20명·14일) → 프로덕션. 스토어 스크린샷·512px 아이콘(있음)·설명 필요
+- 실기기 확인 요청 중: full APK는 패키지가 바뀌어 새 앱으로 설치됨(예전 것 삭제 가능) · targetSdk 36 엣지투엣지는 실기기에서만 검증 가능(상태바 아래 겹침 여부)
+
 ### 플레이 스토어 등록 절차 (play 갈래)
 1. **릴리스 키 만들기**(한 번, 잃어버리면 업데이트 불가 — 안전하게 보관):
    `keytool -genkeypair -v -keystore release.jks -alias aospods -keyalg RSA -keysize 2048 -validity 10000`
