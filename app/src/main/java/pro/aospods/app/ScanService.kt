@@ -471,7 +471,7 @@ class ScanService : Service() {
     private fun buildNotification(pods: Pods?): Notification {
         val mgr = getSystemService(NotificationManager::class.java)
         mgr.createNotificationChannel(
-            NotificationChannel(CHANNEL, "AosPods", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(CHANNEL, "aosPods", NotificationManager.IMPORTANCE_LOW)
                 .apply { setShowBadge(false) }
         )
         val connected = pods != null && pods.hasAny
@@ -482,7 +482,7 @@ class ScanService : Service() {
         )
         val builder = NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_pods)
-            .setContentTitle("AosPods")
+            .setContentTitle("aosPods")
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(pi)

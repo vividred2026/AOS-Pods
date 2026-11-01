@@ -5,7 +5,6 @@
     <!-- 로고(앱바 · S-02): 라이트 = 보라 / 다크 = 흰색 -->
     <color name="logo">#FF6B00DE</color>
     <color name="accent_bg">#FFF0E9FA</color>
-    <color name="splash_start">#FF9435C0</color>
     <color name="splash_end">#FF6B00DE</color>
     <!-- 권한 안내 · 하단 시트 (Figma 디자인 시스템 회색) -->
     <color name="grey900">#FF101214</color>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- S-01 스플래시 (Figma 1216:3004): 보라 그라데이션 · "자유를 얻은 에어팟!" · AOS PODS 로고 · 하단 be:free © vividRed -->
+<!-- S-01 스플래시 (Figma 1216:3004): 단색 보라 #6B00DE · "자유를 얻은 에어팟!" · AOS PODS 로고 · 하단 be:free © vividRed -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,8 +16,8 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:paddingBottom="80dp">
-        <!-- Figma 1216:3004: 로고 172×120 아래 14dp에 문구 16 Medium -->
+        android:paddingBottom="90dp">
+        <!-- Figma 1216:3004: 로고 184×116 아래 14dp에 문구 16 Medium, 로고+문구 묶음은 화면 중심보다 약 45dp 위 -->
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

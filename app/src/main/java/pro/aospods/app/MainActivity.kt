@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
         renderModel()
         lifecycleScope.launch { PodsRepo.modelVersion.collect { renderModel() } }
         b.nightValue.text = nightLabel()
-        b.footerVersion.text = "AosPods ${BuildConfig.VERSION_NAME} · 빌드 ${BuildConfig.BUILD_ID}"
+        b.footerVersion.text = "aosPods ${BuildConfig.VERSION_NAME} · 빌드 ${BuildConfig.BUILD_ID}"
 
         b.swService.setOnCheckedChangeListener { _, on ->
             prefs.serviceEnabled = on
@@ -728,7 +728,7 @@ class MainActivity : AppCompatActivity() {
         // 하단 시트(Figma `1230:2896`): 제목 + ✕ · 본문 · [확인]
         val s = Sheets.base(this, "개인정보 처리방침")
         s.b.sheetBody.addView(sheetText(s.dialog.context,
-            "AosPods는 AirPods가 주변에 보내는 블루투스 신호만 읽어 배터리 상태를 " +
+            "aosPods는 AirPods가 주변에 보내는 블루투스 신호만 읽어 배터리 상태를 " +
             "표시합니다. 위치·배터리 정보를 수집하거나 외부로 전송하지 않으며, " +
             "모든 처리는 기기 안에서만 이루어집니다.", 14f, R.color.ink))
         s.button("확인") { s.dialog.dismiss() }

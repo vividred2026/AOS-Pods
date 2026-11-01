@@ -53,7 +53,7 @@ class OnOffTileService : TileService() {
         val tile = qsTile ?: return
         val on = prefs.serviceEnabled
         tile.state = if (on) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.label = "AosPods"
+        tile.label = "aosPods"
         tile.icon = Icon.createWithResource(this, R.drawable.ic_pods)
         if (Build.VERSION.SDK_INT >= 29) {
             val pods = PodsRepo.pods.value

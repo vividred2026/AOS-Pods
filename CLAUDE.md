@@ -9,7 +9,7 @@
 
 **안드로이드 폰과 에어팟을 페어링하고, 연결된 에어팟의 배터리·충전·착용 상태를 보여주는 앱.**
 
-- 패키지: `pro.aospods.app` · 버전 1.0 (versionCode 1)
+- 패키지: `pro.aospods.app` · 버전 1.0 (versionCode 1) · **표기 이름 `aosPods`**(2026-11-01, 앱 라벨·알림 제목·채널·타일·하단 빌드 줄·개인정보 본문 — 테마/스타일 이름 `Theme.AosPods`는 그대로)
 - minSdk 26 · targetSdk/compileSdk 34 · Kotlin · View + viewBinding · Material Components
 - 앱 이름과 화면은 한국어 전용
 - **안드로이드 전용** — iOS 버전은 만들지 않음(사용자 결정 2026-11-01). 아이콘·디자인 참조 시 iOS 규격은 무시
@@ -101,7 +101,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 - **폰트 Pretendard**(OFL, `res/font/pretendard*.ttf` — 자주 쓰는 한글 2,350자+영문·기호로 줄이고 TrueType으로 변환, 약 2.5MB, 라이선스 `assets/licenses/Pretendard-OFL.txt`). 없는 글자는 시스템 폰트로 대체
   - ⚠️ 테마에는 `android:fontFamily`만 둘 것. `app:fontFamily`(AppCompat)를 테마에 넣으면 뷰별 `android:fontFamily="@font/pretendard_bold"` 등이 무시돼 모든 굵기가 Regular로 보임(실제로 겪음)
 - 로고·아이콘은 Figma 노드를 `exportAsync(SVG)`로 받아 VectorDrawable로 변환(`logo_bar` 메인 앱바 `1240:3462` 108×40(왼쪽 20) · `logo_perm` S-02 `1240:3442` 125×46 · `logo_splash` S-01 `1240:3351` 184×117 — 2026-11-01 수정본(로고 아래 14dp에 "자유를 얻은 에어팟!" 16 Medium) · `logo_befree` S-01 · `ic_check_box_*` · `ic_check_circle_*` · `ic_close`). figma.com 에셋 URL은 이 환경에서 막혀 있음
-- **S-01 스플래시**(`SplashActivity`, 런처, 1.2초) → 처음이면 **S-02 접근 권한 안내**(`PermissionActivity`: 체크=허용됨, 줄 탭=그 권한만 요청, [동의합니다]=전부 요청 → 다른 앱 위에 표시 → 메인, [나중에 설정하기]) → 메인. 위치(11 이하)는 먼저 **위치 권한 이유 시트**
+- **S-01 스플래시**(`SplashActivity`, 런처, 1.2초 · Figma `1216:3004` 2026-11-01: **단색 보라 `#6B00DE` 배경**(그라데이션 제거, `splash_bg` = `@color/splash_end`), 흰 로고 184×116 + 14dp 아래 문구, 묶음은 화면 중심보다 약 45dp 위, 하단 be free © vividRed) → 처음이면 **S-02 접근 권한 안내**(`PermissionActivity`: 체크=허용됨, 줄 탭=그 권한만 요청, [동의합니다]=전부 요청 → 다른 앱 위에 표시 → 메인, [나중에 설정하기]) → 메인. 위치(11 이하)는 먼저 **위치 권한 이유 시트**
 - **하단 시트**(`Sheets.kt`, Figma bottomsheetHeader): 청취 모드 · 제품 선택(모델) · 다크 모드 · 퍼센트 기준 = 체크 목록 / 진단 정보 = 본문 + [AACP 테스트] 링크 + [복사][닫기] / AACP 연결 테스트 = 실시간 로그 + [복사][닫기]. 페어링 안내(Figma `1230:2253`)·기기 목록(`1230:2480`) = 시트 "에어팟 페어링모드" + [블루투스 설정] 링크 + [취소][다음]/[취소][다시 검색], 목록 위 "연결할 에어팟을 선택하세요.   +N"(N=발견 수, 보라). 이름 변경은 기존 다이얼로그(보라 강조)
 - **글자 크기(Figma `1216:3535` 기준)**: 행 제목 15 Medium(행간 20, 자간 -0.2) · 요약 13 Regular(행간 18) · 카테고리 14 Bold · 연결 카드 제목 16 Bold(행간 24) · 상태 13 · 이름-모델 14 Bold · R/L/C % 16 Bold · 칩 글자 18 Black · 앱바 로고 **108×40**(Figma `1240:3462`, 2026-11-01 수정본 — 기울어진 이어버드 + aos/pods, 위 16 · 왼쪽 20 · 아래 0). 디자인은 메인 목록에 Spoqa Han Sans Neo를 쓰지만 앱은 Pretendard로 통일(크기·굵기·행간·자간만 맞춤)
 - **앱 아이콘**(2026-11-01, Figma Idea `1240:3505` 1024×1024 보라 `#6B00DE` + 흰 로고 `1240:3484`, 스타일 기준 Global Brand Hierarchy `iPV27Q03kJhBHp3R4RLKRN` 87:1531 — 단색 배경 + 흰 심벌의 AOS 적응형 아이콘): `mipmap-anydpi-v26/ic_launcher(_round).xml` = 배경 색 + 전경 `ic_launcher_foreground`(108dp 캔버스에 50dp 폭 — 보이는 72dp의 약 70%, 안전 영역 66dp 원 안) + monochrome(테마 아이콘). 캡처 `icon_full.png`·`icon_round.png`. Figma 규격 보드 `1249:2538`(1240:3505 오른쪽: 108dp 레이어 규격·마스크별 크기 줄·테마 아이콘)
@@ -171,7 +171,7 @@ app/src/test/  — 단위 테스트 + Robolectric
   - ⚠️ **정보(0x1D)는 연결 직후 한 번만 오고 요청 불가**(LibrePods `docs/device-info.md`). 그래서 기기별로 `Prefs.saveAapInfo`에 저장 → 다음 연결 때 먼저 보여 주고 "마지막으로 받은 정보"로 표시(`AapSession.infoFresh`). 실기기에서 정보가 안 보였던 원인: 메모리에만 두고 재시작 시 사라짐 + 로그 80줄이 반복 메시지에 밀림.
   - 실기기 로그로 확인된 기타 메시지: `08` 버드 역할, `0E`(주소 포함)·`55 00 01 01 00 [19|32]`가 몇 초마다 반복, `17` 수백 B(헤드트래킹 등), `2E` 연결 기기 목록, `52`. 배터리 `04` 수신 확인(왼·오 100%, 케이스 04=연결 안 됨).
   - AACP 로그: 해석 안 하는 메시지는 같은 내용이면 1회만 기록, 버퍼 200줄, 수신 버퍼 8KB(큰 메시지 잘림 방지).
-- 화면 맨 아래 `AosPods 1.0 · 빌드 <커밋 7자리>`(`BuildConfig.BUILD_ID`, CI의 `GITHUB_SHA`) — 사용자가 어떤 APK를 설치했는지 확인용. 진단·AACP 로그 첫 줄에도 표시.
+- 화면 맨 아래 `aosPods 1.0 · 빌드 <커밋 7자리>`(`BuildConfig.BUILD_ID`, CI의 `GITHUB_SHA`) — 사용자가 어떤 APK를 설치했는지 확인용. 진단·AACP 로그 첫 줄에도 표시.
 
 ### (참고) BLE 방식 착용 감지의 한계
 - 원인: 착용 정보는 **BLE 0x07 광고 안에만** 있는데, 에어팟을 **귀에 끼고 연결·재생 중일 때 0x07이 0건** 수신됨
