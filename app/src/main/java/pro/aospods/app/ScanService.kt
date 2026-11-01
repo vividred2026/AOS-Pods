@@ -42,6 +42,8 @@ object PodsRepo {
     val recentDecrypted = ArrayDeque<String>()
     /** 이 시각까지 빠른 스캔(진단 정보 시트를 열면 90초 연장). */
     @Volatile var boostUntil: Long = 0
+    /** 실험: 이 시각까지 에어팟 전용 채널(AACP)을 끊어 둠 — AACP가 열려 있으면 에어팟이 근접 광고를 보내지 않아(실기기) 광고 수집이 안 됨. */
+    @Volatile var aapPauseUntil: Long = 0
     /** 복호화에 쓸 키가 있는지 등 진단용 메모. */
     @Volatile var bleKeyNote: String = "키 없음"
     /** AACP로 새 키를 받으면 1 증가(서비스가 키를 다시 읽음). */
@@ -98,10 +100,14 @@ class ScanService : Service() {
             val now = System.currentTimeMillis()
             val types = typeCounts.entries.sortedByDescending { it.value }.take(5)
                 .joinToString(" ") { "%02X×%d".format(it.key, it.value) }
+            // 광고 수집 실험: 일시정지 구간에 들어가면 AACP를 끊고, 끝나면 다시 연다
+            val paused = now < PodsRepo.aapPauseUntil
+            if (paused && !aapPaused) { aapPaused = true; AapSession.stop(); aapPods = null; aapWorn = null }
+            else if (!paused && aapPaused) { aapPaused = false; syncAap() }
             updateScan()   // 연결·전용 채널·화면 상태에 맞게 스캔 켜기/끄기/강도 조절
             val scanState = if (!scanning) "스캔 쉬는 중(에어팟 미연결)" else
                 (if (scanAllMode) "전체 스캔" else "애플 필터") + "·" + scanModeName(scanMode)
-            PodsRepo.diagLine = "진단($scanState): " +
+            PodsRepo.diagLine = "진단($scanState${if (paused) " · AACP 잠시 끊음 ${(PodsRepo.aapPauseUntil - now) / 1000}초 남음" else ""}): " +
                 "BLE $cTotal · 애플 $cApple · 07 $c07(배터리형 0719 $c0719 · 기타 $c07Other) · 반영 $cPods" +
                 "\n유형: $types" +
                 (if (last07Hex.isNotEmpty()) "\n07: ${last07Hex.take(20)}…" else "")
@@ -137,6 +143,8 @@ class ScanService : Service() {
         val tail = p.copyOfRange(p.size - 16, p.size).joinToString("") { "%02X".format(it) }
         PodsRepo.addDecrypted("${tail.take(8)}… → " + d.joinToString(" ") { "%02X".format(it) })
     }
+
+    private var aapPaused = false
 
     private val callback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -458,7 +466,7 @@ class ScanService : Service() {
         if (dev == null || adapter == null || !adapter.isEnabled || !Perms.ok(this)) {
             AapSession.onEar = null; AapSession.onBattery = null
             AapSession.stop(); aapPods = null; aapWorn = null
-        } else {
+        } else if (System.currentTimeMillis() >= PodsRepo.aapPauseUntil) {
             // 끊김 분기에서 지운 콜백을 연결 때마다 다시 등록(한 번만 등록하면 첫 연결 전에 지워져 배터리가 화면에 안 옴 — 실기기 재현)
             registerAap()
             AapSession.start(this, adapter, dev)

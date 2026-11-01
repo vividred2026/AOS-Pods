@@ -687,8 +687,18 @@ class MainActivity : AppCompatActivity() {
         // 진단정보 시트 (Figma 1216:5169): 오른쪽 위 [AACP 테스트] · 하단 [복사] [닫기]
         val s = Sheets.base(this, "진단 정보").link("AACP 테스트") { showAapExperiment() }
         s.text(text)
-        s.buttons("복사", { copy("aospods", text, "진단 정보를 복사했습니다") }, "닫기", { s.dialog.dismiss() })
+        s.buttons("광고 테스트 60초", { startAdTest(); s.dialog.dismiss() }, "복사", { copy("aospods", text, "진단 정보를 복사했습니다") })
         s.dialog.show()
+    }
+
+    /** 실험: 에어팟 전용 채널을 60초 끊고 빠른 스캔으로 암호화 광고를 모아 저장된 키로 복호화(결과는 진단 정보 맨 아래).
+     *  AACP가 열려 있는 동안엔 에어팟이 근접 광고를 보내지 않아(실기기 확인) 이 방법으로만 광고를 받을 수 있다. */
+    private fun startAdTest() {
+        val now = System.currentTimeMillis()
+        PodsRepo.aapPauseUntil = now + 60_000
+        PodsRepo.boostUntil = now + 75_000
+        if (!PodsRepo.running.value) { toast("서비스를 먼저 켜 주세요"); return }
+        toast("60초 동안 전용 채널을 끊고 광고를 모아요 — 케이스 뚜껑을 열어 두세요. 끝나면 자동으로 다시 연결돼요")
     }
 
     /** 청취 모드 선택 → 에어팟에 전송. 2초 안에 에어팟이 같은 모드로 확인해 주지 않으면 미지원 안내. */
