@@ -22,12 +22,15 @@ android {
     play {
       dimension "dist"
       buildConfigField "boolean", "AACP", "false"
+      resValue "string", "app_name", "aosPods"
     }
     full {
       dimension "dist"
       applicationIdSuffix ".full"
       versionNameSuffix "-full"
       buildConfigField "boolean", "AACP", "true"
+      // 두 갈래를 나란히 설치하면 런처에서 구분이 안 돼 이름에 Full을 붙임
+      resValue "string", "app_name", "aosPods Full"
     }
   }
   buildFeatures { viewBinding true; buildConfig true }

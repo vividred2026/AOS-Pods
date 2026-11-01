@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">aosPods</string>
+    <!-- app_name은 build.gradle의 갈래별 resValue(aosPods / aosPods Full) -->
 </resources>

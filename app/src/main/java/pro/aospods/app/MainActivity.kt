@@ -650,7 +650,7 @@ class MainActivity : AppCompatActivity() {
         val recent = synchronized(PodsRepo.recentRaw) { PodsRepo.recentRaw.toList() }
         val head = "연결: ${BtState.connectedName.value ?: "없음"} · HFP 배터리: ${BtState.hfpBattery.value?.let { "$it%" } ?: "없음"}\n" +
             "배터리 경로: ${BtState.batteryNote} · 숨김 API: ${HiddenApi.result}\n" +
-            "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · 앱 빌드 ${BuildConfig.BUILD_ID}\n" +
+            "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · 앱 빌드 ${BuildConfig.BUILD_ID} (${BuildConfig.FLAVOR} 갈래 · ${BuildConfig.VERSION_NAME})\n" +
             PodsRepo.diagLine + "\n\n"
         val text = head + if (hex.isEmpty()) {
             "아직 받은 에어팟 배터리 신호(07)가 없습니다.\n케이스를 폰 옆에서 열고 잠시 후 다시 확인하세요."
@@ -713,7 +713,7 @@ class MainActivity : AppCompatActivity() {
         if (dev == null) { toast("에어팟을 먼저 연결해 주세요"); return }
         if (!runtimePermsOk()) { requestRuntimePerms(); return }
 
-        val head = "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · ${Build.ID} · 앱 빌드 ${BuildConfig.BUILD_ID}\n"
+        val head = "안드로이드 ${Build.VERSION.SDK_INT} · ${Build.MANUFACTURER} ${Build.MODEL} · ${Build.ID} · 앱 빌드 ${BuildConfig.BUILD_ID} (${BuildConfig.FLAVOR} 갈래)\n"
         // AACP 연결 테스트 시트 (Figma 1216:5303): 실시간 로그 · [복사] [닫기]
         val s = Sheets.base(this, "AACP 연결 테스트")
         val logView = s.text("")
