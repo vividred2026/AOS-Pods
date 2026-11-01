@@ -105,8 +105,8 @@ class MainActivity : AppCompatActivity() {
         b.podR.podLetter.text = "R"; b.podL.podLetter.text = "L"; b.podC.podLetter.text = "C"
         lifecycleScope.launch {
             kotlinx.coroutines.flow.combine(
-                BtState.connectedName, BtState.hfpBattery, PodsRepo.pods, AapSession.info
-            ) { n, h, p, i -> PairUi(n, h, p, i?.modelNumber) }
+                BtState.connectedName, BtState.hfpBattery, PodsRepo.pods, AapSession.info, PodsRepo.running
+            ) { n, h, p, i, r -> PairUi(n, h, p, i?.modelNumber, r) }
                 .collect { renderPairCard(it) }
         }
         // 청취 모드: AACP 연결에 성공했을 때만 메뉴 표시
@@ -186,7 +186,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun pct(v: Int) = if (v > 0) "$v%" else "--"
 
-    private data class PairUi(val name: String?, val hfp: Int?, val pods: Pods?, val modelNumber: String?)
+    private data class PairUi(val name: String?, val hfp: Int?, val pods: Pods?, val modelNumber: String?, val running: Boolean)
 
     private fun renderPairCard(u: PairUi) {
         val connected = u.name != null
@@ -216,7 +216,8 @@ class MainActivity : AppCompatActivity() {
             // 좌·우·케이스 값이 아직 없으면 칩 대신 안내(가짜 값 표시 안 함)
             b.podsRow.visibility = View.GONE
             b.pairDetail.visibility = View.VISIBLE
-            b.pairDetail.text = if (u.hfp != null) "전체 배터리 ${u.hfp}% · 케이스 뚜껑을 열면 R·L·C 표시"
+            b.pairDetail.text = if (!u.running) "배터리를 보려면 아래 '서비스 활성화'를 켜 주세요"   // 배터리·착용은 서비스가 받아 화면에 넘김
+                else if (u.hfp != null) "전체 배터리 ${u.hfp}% · 케이스 뚜껑을 열면 R·L·C 표시"
                 else if (BuildConfig.AACP) "배터리 확인 중 · 케이스 뚜껑을 열면 R·L·C 표시"
                 else "배터리 확인 중 · 에어팟을 다시 연결하거나 케이스 뚜껑을 열어 보세요 (플레이 버전은 일부 폰·모델에서 배터리를 못 받을 수 있어요)"
         }
@@ -727,6 +728,7 @@ class MainActivity : AppCompatActivity() {
             "닫기", { s.dialog.dismiss() })
         s.dialog.setOnDismissListener { job.cancel() }
         s.dialog.show()
+        if (!PodsRepo.running.value) toast("서비스가 꺼져 있어요 — 배터리·착용을 화면에 보이려면 '서비스 활성화'를 켜 주세요")
         if (!AapSession.connected.value) AapSession.start(this, adapter, dev, force = true)
     }
 
