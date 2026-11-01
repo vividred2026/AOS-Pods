@@ -11,7 +11,7 @@
 
 - 패키지: `pro.aospods.app` · 버전 1.0 (versionCode 1) · **표기 이름 `aosPods`**(2026-11-01, 앱 라벨·알림 제목·채널·타일·하단 빌드 줄·개인정보 본문 — 테마/스타일 이름 `Theme.AosPods`는 그대로)
 - minSdk 26 · **targetSdk/compileSdk 36**(2026-11-01, 플레이 요구 · AGP 8.9.1 · Gradle 8.11.1) · Kotlin · View + viewBinding · Material Components
-- **두 갈래(product flavor, 같은 저장소·같은 코드, 2026-11-01)**: `play` = 플레이 스토어용(`pro.aospods.app`, 숨김 API 우회·AACP 없음) / `full` = 사이드로드 전체 기능(`pro.aospods.app.full`, 버전 `1.0-full`, 나란히 설치 가능). AACP 코드(`AapClient.kt`·`HiddenApi.kt`)는 `src/full/`에, `src/play/`에는 같은 이름의 스텁(연결 실패 안내만). `BuildConfig.AACP`로 분기: HFP 배터리 반사 조회(`BtState.readBattery`), 페어링 후 프로파일 직접 연결(`connectProfiles`), 진단의 [AACP 테스트] 링크, 착용 감지 안내 문구. `hiddenapibypass`는 `fullImplementation`. targetSdk 35+ 엣지투엣지는 `AosApp`이 모든 화면 content 뷰에 시스템 바 여백을 넣어 처리. Robolectric은 `src/test/resources/robolectric.properties`로 SDK 34 고정. 위치 권한은 `maxSdkVersion=30`
+- **두 갈래(product flavor, 같은 저장소·같은 코드, 2026-11-01)**: `play` = 플레이 스토어용(`pro.aospods.app`, 숨김 API 우회·AACP 없음) / `full` = 사이드로드 전체 기능(`pro.aospods.app.full`, 버전 `1.0-full`, 나란히 설치 가능). AACP 코드(`AapClient.kt`·`HiddenApi.kt`)는 `src/full/`에, `src/play/`에는 같은 이름의 스텁(연결 실패 안내만). `BuildConfig.AACP`로 분기: 페어링 후 프로파일 직접 연결(`connectProfiles`), 진단의 [AACP 테스트] 링크, 착용 감지·배터리 안내 문구. HFP 배터리 반사 조회(`BtState.readBattery`)는 우회 라이브러리가 아닌 일반 반사라 **플레이 갈래에서도 시도**(실기기 진단에서 플레이 빌드가 HFP 배터리를 전혀 못 받아 되살림 2026-11-01 — 삼성 SM-S937N은 공개 경로 ①②가 안 오는 것으로 보임). `hiddenapibypass`는 `fullImplementation`. targetSdk 35+ 엣지투엣지는 `AosApp`이 모든 화면 content 뷰에 시스템 바 여백을 넣어 처리. Robolectric은 `src/test/resources/robolectric.properties`로 SDK 34 고정. 위치 권한은 `maxSdkVersion=30`
 - 앱 이름과 화면은 한국어 전용
 - **안드로이드 전용** — iOS 버전은 만들지 않음(사용자 결정 2026-11-01). 아이콘·디자인 참조 시 iOS 규격은 무시
 

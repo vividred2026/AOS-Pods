@@ -217,7 +217,8 @@ class MainActivity : AppCompatActivity() {
             b.podsRow.visibility = View.GONE
             b.pairDetail.visibility = View.VISIBLE
             b.pairDetail.text = if (u.hfp != null) "전체 배터리 ${u.hfp}% · 케이스 뚜껑을 열면 R·L·C 표시"
-                else "배터리 확인 중 · 케이스 뚜껑을 열면 R·L·C 표시"
+                else if (BuildConfig.AACP) "배터리 확인 중 · 케이스 뚜껑을 열면 R·L·C 표시"
+                else "배터리 확인 중 · 에어팟을 다시 연결하거나 케이스 뚜껑을 열어 보세요 (플레이 버전은 일부 모델의 배터리를 받지 못해요)"
         }
     }
 
