@@ -39,6 +39,8 @@ class PermissionActivity : AppCompatActivity() {
                 listOf(Manifest.permission.POST_NOTIFICATIONS)))
         }
     }
+    /** 화면에 보여 줄 항목 = 화면을 열 때 아직 허용되지 않은 권한만 (Figma 1282:2409). */
+    private var shown: List<Item> = emptyList()
     private val rows = mutableListOf<PermRowBinding>()
 
     /** [동의합니다] 흐름: 런타임 권한 → (다른 앱 위에 표시) → 메인. */
@@ -59,7 +61,8 @@ class PermissionActivity : AppCompatActivity() {
         b = ActivityPermissionBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        for (item in items) {
+        shown = items.filterNot(::granted)
+        for (item in shown) {
             val r = PermRowBinding.inflate(LayoutInflater.from(this), b.permList, false)
             r.permTitle.text = item.title
             r.permReason.text = item.reason
@@ -103,7 +106,7 @@ class PermissionActivity : AppCompatActivity() {
         else item.runtime.all { ContextCompat.checkSelfPermission(this, it) == android.content.pm.PackageManager.PERMISSION_GRANTED }
 
     private fun refresh() {
-        items.forEachIndexed { i, item ->
+        shown.forEachIndexed { i, item ->
             rows[i].permCheck.setImageResource(if (granted(item)) R.drawable.ic_check_box_on else R.drawable.ic_check_box_off)
         }
     }

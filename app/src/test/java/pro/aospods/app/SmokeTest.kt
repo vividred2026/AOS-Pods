@@ -24,6 +24,15 @@ class SmokeTest {
         // SDK 34: 다른 앱 위에 표시 · 블루투스 · 알림 (위치는 11 이하만)
         org.junit.Assert.assertEquals(3, list.childCount)
     }
+    /** Figma 1282:2409: 이미 허용된 권한은 목록에서 빠지고, 없는 권한만 보여 준다. */
+    @Test fun permissionScreenListsOnlyMissing() {
+        val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
+        org.robolectric.Shadows.shadowOf(app).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        val a = Robolectric.buildActivity(PermissionActivity::class.java).setup().get()
+        val list = a.findViewById<android.widget.LinearLayout>(R.id.permList)
+        // SDK 34, 알림만 허용됨 → 다른 앱 위에 표시 · 블루투스 2줄
+        org.junit.Assert.assertEquals(2, list.childCount)
+    }
     /** 실행할 때마다 실제 권한으로 판단 — 하나라도 없으면 권한 획득 페이지, 모두 있으면 메인. */
     @Test fun permissionScreenWhenAnyPermissionMissing() {
         val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
