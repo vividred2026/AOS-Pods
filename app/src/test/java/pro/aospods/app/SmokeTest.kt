@@ -35,6 +35,17 @@ class SmokeTest {
         Prefs(app).onboardedInstall = 12345L // 자동 백업이 되살린 이전 설치의 기록
         org.junit.Assert.assertTrue("이전 설치의 기록이면 다시 권한 안내", PermissionActivity.shouldShow(app))
     }
+    /** 스플래시를 거치지 않고 메인이 바로 열려도(최근 앱 등) 이번 설치에서 안 봤으면 S-02를 띄움. */
+    @Test fun mainOpensPermissionGuideWhenNotSeen() {
+        val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
+        val first = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        org.junit.Assert.assertEquals(PermissionActivity::class.java.name,
+            org.robolectric.Shadows.shadowOf(first).nextStartedActivity?.component?.className)
+
+        PermissionActivity.markDone(app)
+        val again = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        org.junit.Assert.assertNull("봤으면 바로 메인", org.robolectric.Shadows.shadowOf(again).nextStartedActivity)
+    }
     @Test fun choiceSheetShows() {
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         var picked = -1
