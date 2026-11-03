@@ -58,11 +58,6 @@ class MainActivity : AppCompatActivity() {
         b = ActivityMainBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        // 스플래시를 거치지 않고 메인이 바로 열리는 경우(최근 앱 목록·설치 직후 남은 작업 등)에도
-        // 이번 설치에서 S-02 권한 안내를 아직 안 봤으면 먼저 보여 준다. 끝나면 PermissionActivity가 메인으로 돌아옴.
-        if (savedInstanceState == null && PermissionActivity.shouldShow(this))
-            startActivity(Intent(this, PermissionActivity::class.java))
-
         b.swService.isChecked = prefs.serviceEnabled
         b.swNotif.isChecked = prefs.notification
         b.swPercent.isChecked = prefs.percentInIcon

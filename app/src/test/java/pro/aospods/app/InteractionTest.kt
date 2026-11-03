@@ -49,7 +49,6 @@ class InteractionTest {
     }
 
     @Test fun batteryRowTextOpensSubPage() {
-        PermissionActivity.markDone(org.robolectric.RuntimeEnvironment.getApplication()) // S-02 자동 안내는 이 테스트 대상 아님
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         a.findViewById<LinearLayout>(R.id.textNotif).performClick()
         val next = shadowOf(a).nextStartedActivity
