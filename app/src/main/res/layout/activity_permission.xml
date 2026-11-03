@@ -64,16 +64,5 @@
             android:layout_width="match_parent"
             android:layout_marginTop="20dp"
             android:text="동의합니다."/>
-        <TextView
-            android:id="@+id/btnLater"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="4dp"
-            android:gravity="center"
-            android:text="나중에 설정하기"
-            android:textColor="@color/grey600"
-            android:textSize="13sp"
-            android:fontFamily="@font/pretendard_bold"
-            android:background="?attr/selectableItemBackground"/>
     </LinearLayout>
 </ScrollView>

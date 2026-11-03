@@ -24,16 +24,22 @@ class SmokeTest {
         // SDK 34: 다른 앱 위에 표시 · 블루투스 · 알림 (위치는 11 이하만)
         org.junit.Assert.assertEquals(3, list.childCount)
     }
-    /** 권한 안내는 처음 설치 후 한 번만. 백업으로 되살아난 이전 설치의 기록으로는 건너뛰지 않음. */
-    @Test fun permissionScreenOncePerInstall() {
+    /** 실행할 때마다 실제 권한으로 판단 — 하나라도 없으면 권한 획득 페이지, 모두 있으면 메인. */
+    @Test fun permissionScreenWhenAnyPermissionMissing() {
         val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
-        org.junit.Assert.assertTrue("새 설치 → 권한 안내", PermissionActivity.shouldShow(app))
+        val shadowApp = org.robolectric.Shadows.shadowOf(app)
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(false)
+        org.junit.Assert.assertTrue("권한 없음 → 권한 페이지", PermissionActivity.shouldShow(app))
 
-        PermissionActivity.markDone(app)
-        org.junit.Assert.assertFalse("이번 설치에서 봤으면 다시 안 뜸", PermissionActivity.shouldShow(app))
+        shadowApp.grantPermissions(*Perms.required())
+        org.junit.Assert.assertTrue("다른 앱 위에 표시가 없으면 권한 페이지", PermissionActivity.shouldShow(app))
 
-        Prefs(app).onboardedInstall = 12345L // 자동 백업이 되살린 이전 설치의 기록
-        org.junit.Assert.assertTrue("이전 설치의 기록이면 다시 권한 안내", PermissionActivity.shouldShow(app))
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(true)
+        org.junit.Assert.assertFalse("모두 허용 → 메인", PermissionActivity.shouldShow(app))
+
+        shadowApp.denyPermissions(android.Manifest.permission.BLUETOOTH_CONNECT)
+        org.junit.Assert.assertTrue("하나라도 빠지면 다시 권한 페이지", PermissionActivity.shouldShow(app))
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(false)
     }
     @Test fun choiceSheetShows() {
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()

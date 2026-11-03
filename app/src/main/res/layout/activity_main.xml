@@ -23,54 +23,6 @@
             android:src="@drawable/logo_bar"
             android:contentDescription="AOS PODS"/>
 
-        <!-- 권한이 빠졌을 때만: 연결 카드와 같은 회색 카드 + [허용] → S-02 접근 권한 안내 -->
-        <LinearLayout
-            android:id="@+id/permCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="16dp"
-            android:background="@drawable/pair_card_bg"
-            android:clickable="true"
-            android:focusable="true"
-            android:visibility="gone">
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="권한이 필요해요"
-                    android:textColor="@color/ink"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/pretendard_bold"
-                    android:letterSpacing="-0.019"/>
-                <TextView
-                    android:id="@+id/permMissing"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginEnd="8dp"
-                    android:textColor="@color/muted"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-            <TextView
-                android:id="@+id/btnPermFix"
-                android:layout_width="64dp"
-                android:layout_height="40dp"
-                android:background="@drawable/btn_pair"
-                android:gravity="center"
-                android:text="허용"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:fontFamily="@font/pretendard_semibold"/>
-        </LinearLayout>
-
         <!-- 설정 리스트 (M-00) -->
         <LinearLayout
             android:layout_width="match_parent"

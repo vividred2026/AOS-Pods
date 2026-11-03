@@ -8,12 +8,6 @@ import androidx.core.content.edit
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("aospods", Context.MODE_PRIVATE)
 
-    /** S-02 권한 안내를 마친(동의 또는 나중에) 설치의 설치 시각. 지금 설치 시각과 같아야 "이번 설치에서 봤음".
-     *  설치 시각으로 묶는 이유: 자동 백업(allowBackup)이 새 설치에 이전 설정을 되살려 처음 설치인데도 안내가 건너뛰어졌음. */
-    var onboardedInstall: Long
-        get() = sp.getLong("onboarded_install", -1L)
-        set(v) = sp.edit { putLong("onboarded_install", v) }
-
     var serviceEnabled: Boolean
         get() = sp.getBoolean("enabled", false)
         set(v) = sp.edit { putBoolean("enabled", v) }

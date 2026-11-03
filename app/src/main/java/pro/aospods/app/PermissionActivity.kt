@@ -46,11 +46,12 @@ class PermissionActivity : AppCompatActivity() {
 
     private val runtimeLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         refresh()
-        if (agreeFlow) askOverlayThenFinish()
+        if (!agreeFlow) return@registerForActivityResult
+        if (Perms.ok(this)) askOverlayThenFinish() else runtimeDenied()
     }
     private val overlayLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         refresh()
-        if (agreeFlow) goMain()
+        if (agreeFlow) finishIfAllGranted()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +81,7 @@ class PermissionActivity : AppCompatActivity() {
         }
 
         b.btnAgree.setOnClickListener {
-            markDone(this); agreeFlow = true
+            agreeFlow = true
             val missing = Perms.missing(this)
             when {
                 missing.isEmpty() -> askOverlayThenFinish()
@@ -90,7 +91,6 @@ class PermissionActivity : AppCompatActivity() {
                 else -> runtimeLauncher.launch(missing.toTypedArray())
             }
         }
-        b.btnLater.setOnClickListener { markDone(this); goMain() }
     }
 
     override fun onResume() { super.onResume(); refresh() }
@@ -120,8 +120,27 @@ class PermissionActivity : AppCompatActivity() {
     private fun askOverlayThenFinish() {
         if (!Settings.canDrawOverlays(this)) {
             overlayLauncher.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-        } else goMain()
+        } else finishIfAllGranted()
     }
+
+    /** 처음 진입 시 권한을 모두 허용해야 메인으로 이동(사용자 결정 2026-11-03, [나중에 설정하기] 삭제). */
+    private fun finishIfAllGranted() {
+        if (allGranted(this)) goMain()
+        else toast("모든 권한을 허용해야 시작할 수 있어요")
+    }
+
+    /** 거부됨. '다시 묻지 않음'이면 요청 창이 더 안 뜨므로 앱 설정으로 보냄. */
+    private fun runtimeDenied() {
+        val blocked = Perms.missing(this).any { !shouldShowRequestPermissionRationale(it) }
+        if (blocked) {
+            toast("앱 설정 > 권한에서 허용해 주세요")
+            try {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+            } catch (_: Exception) {}
+        } else toast("모든 권한을 허용해야 시작할 수 있어요")
+    }
+
+    private fun toast(msg: String) = android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_LONG).show()
 
     /** 위치 권한 이유 시트 (Figma 1216:3451). */
     private fun showLocationReason(onYes: () -> Unit, onNo: () -> Unit) {
@@ -139,15 +158,9 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     companion object {
-        /** 처음 설치 후 한 번만 권한 안내. 이후 권한이 빠지면 메인의 권한 카드가 안내.
-         *  "한 번 봤음"은 설치 시각과 함께 저장 — 백업 복원으로 옛 값이 돌아와도 새 설치면 다시 보여 준다. */
-        fun shouldShow(ctx: Context) = Prefs(ctx).onboardedInstall != installTime(ctx)
+        fun allGranted(ctx: Context) = Perms.ok(ctx) && Settings.canDrawOverlays(ctx)
 
-        fun markDone(ctx: Context) { Prefs(ctx).onboardedInstall = installTime(ctx) }
-
-        @Suppress("DEPRECATION")
-        private fun installTime(ctx: Context): Long = try {
-            ctx.packageManager.getPackageInfo(ctx.packageName, 0).firstInstallTime
-        } catch (e: Exception) { 0L }
+        /** 실행할 때마다 검사 — 권한이 하나라도 없으면 권한 획득 페이지(S-02)로 이동(사용자 결정 2026-11-03). */
+        fun shouldShow(ctx: Context) = !allGranted(ctx)
     }
 }

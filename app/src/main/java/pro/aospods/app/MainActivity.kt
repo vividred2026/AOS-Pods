@@ -1,6 +1,5 @@
 package pro.aospods.app
 
-import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -28,7 +27,6 @@ class MainActivity : AppCompatActivity() {
     private val permLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
-        refreshPermissionUi()
         if (prefs.serviceEnabled && runtimePermsOk()) ScanService.start(this)
         else if (prefs.serviceEnabled) {
             prefs.serviceEnabled = false; b.swService.isChecked = false
@@ -80,7 +78,7 @@ class MainActivity : AppCompatActivity() {
         }
         b.swNotif.setOnCheckedChangeListener { _, on -> prefs.notification = on; applyNow() }
         b.swPercent.setOnCheckedChangeListener { _, on -> prefs.percentInIcon = on; applyNow() }
-        b.swPopup.setOnCheckedChangeListener { _, on -> prefs.popup = on; refreshPermissionUi(); applyNow() }
+        b.swPopup.setOnCheckedChangeListener { _, on -> prefs.popup = on; applyNow() }
         b.swPause.setOnCheckedChangeListener { _, on -> prefs.autoPause = on }
         b.swResume.setOnCheckedChangeListener { _, on -> prefs.autoResume = on }
 
@@ -136,10 +134,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
         }
-        // 빠진 권한 → S-02 접근 권한 안내 화면(권한별 사유 · 요청)
-        b.permCard.setOnClickListener { open(PermissionActivity::class.java) }
-        b.btnPermFix.setOnClickListener { open(PermissionActivity::class.java) }
-
         showCrashIfAny()
 
         lifecycleScope.launch {
@@ -159,7 +153,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        refreshPermissionUi()
         if (prefs.serviceEnabled && runtimePermsOk()) ScanService.start(this)
     }
 
@@ -242,29 +235,7 @@ class MainActivity : AppCompatActivity() {
     private fun runtimePermsOk() = Perms.ok(this)
     private fun requestRuntimePerms() = permLauncher.launch(missingRuntime().toTypedArray())
 
-    private fun canOverlay() =
-        if (Build.VERSION.SDK_INT >= 23) Settings.canDrawOverlays(this) else true
 
-
-    private fun refreshPermissionUi() {
-        val missing = missingRuntime()
-        val locMissing = missing.any {
-            it == Manifest.permission.ACCESS_FINE_LOCATION || it == Manifest.permission.ACCESS_COARSE_LOCATION
-        }
-        val btMissing = missing.any {
-            it == Manifest.permission.BLUETOOTH_SCAN || it == Manifest.permission.BLUETOOTH_CONNECT
-        }
-        val notifMissing = missing.contains(Manifest.permission.POST_NOTIFICATIONS)
-        // "다른 앱 위에 표시"는 팝업 기능을 켠 경우에만 요청
-        val overlayMissing = prefs.popup && !canOverlay()
-        b.permMissing.text = listOfNotNull(
-            "다른 앱 위에 표시".takeIf { overlayMissing }, "위치".takeIf { locMissing },
-            "블루투스".takeIf { btMissing }, "알림".takeIf { notifMissing },
-        ).joinToString(" · ")
-        b.permCard.visibility =
-            if (locMissing || btMissing || notifMissing || overlayMissing)
-                View.VISIBLE else View.GONE
-    }
 
     // --- 다이얼로그 ---
 
