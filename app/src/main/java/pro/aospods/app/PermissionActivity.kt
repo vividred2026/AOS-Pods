@@ -80,7 +80,7 @@ class PermissionActivity : AppCompatActivity() {
         }
 
         b.btnAgree.setOnClickListener {
-            agreeFlow = true
+            markDone(this); agreeFlow = true
             val missing = Perms.missing(this)
             when {
                 missing.isEmpty() -> askOverlayThenFinish()
@@ -90,7 +90,7 @@ class PermissionActivity : AppCompatActivity() {
                 else -> runtimeLauncher.launch(missing.toTypedArray())
             }
         }
-        b.btnLater.setOnClickListener { goMain() }
+        b.btnLater.setOnClickListener { markDone(this); goMain() }
     }
 
     override fun onResume() { super.onResume(); refresh() }
@@ -139,8 +139,15 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     companion object {
-        /** 플로우차트 STEP 0(Figma 1161:54): 앱을 실행할 때마다 권한을 검사해 하나라도 없으면 권한 안내, 모두 있으면 메인.
-         *  예전엔 "한 번 봤음" 표시로만 판단해서, 덮어 설치·백업 복원·[나중에] 이후엔 권한이 없어도 안 떴음. */
-        fun shouldShow(ctx: Context) = !Perms.ok(ctx) || !Settings.canDrawOverlays(ctx)
+        /** 처음 설치 후 한 번만 권한 안내. 이후 권한이 빠지면 메인의 권한 카드가 안내.
+         *  "한 번 봤음"은 설치 시각과 함께 저장 — 백업 복원으로 옛 값이 돌아와도 새 설치면 다시 보여 준다. */
+        fun shouldShow(ctx: Context) = Prefs(ctx).onboardedInstall != installTime(ctx)
+
+        fun markDone(ctx: Context) { Prefs(ctx).onboardedInstall = installTime(ctx) }
+
+        @Suppress("DEPRECATION")
+        private fun installTime(ctx: Context): Long = try {
+            ctx.packageManager.getPackageInfo(ctx.packageName, 0).firstInstallTime
+        } catch (e: Exception) { 0L }
     }
 }
