@@ -692,7 +692,7 @@ class MainActivity : AppCompatActivity() {
         // 진단정보 시트 (Figma 1216:5169): 오른쪽 위 [AACP 테스트] · 하단 [복사] [닫기]
         val s = Sheets.base(this, "진단 정보").link("AACP 테스트") { showAapExperiment() }
         s.text(text)
-        s.buttons("광고 테스트 60초", { startAdTest(); s.dialog.dismiss() }, "복사", { copy("aospods", text, "진단 정보를 복사했습니다") })
+        s.buttons("복사", { copy("aospods", text, "진단 정보를 복사했습니다") }, "닫기", { s.dialog.dismiss() })
         s.dialog.show()
     }
 
