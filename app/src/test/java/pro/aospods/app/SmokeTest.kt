@@ -24,6 +24,23 @@ class SmokeTest {
         // SDK 34: 다른 앱 위에 표시 · 블루투스 · 알림 (위치는 11 이하만)
         org.junit.Assert.assertEquals(3, list.childCount)
     }
+    /** 플로우차트 STEP 0: 실행할 때마다 실제 권한으로 판단 — 하나라도 없으면 권한 안내, 모두 있으면 메인. */
+    @Test fun permissionScreenFollowsActualPermissions() {
+        val app = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
+        val shadowApp = org.robolectric.Shadows.shadowOf(app)
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(false)
+        org.junit.Assert.assertTrue("권한 없음 → 권한 안내", PermissionActivity.shouldShow(app))
+
+        shadowApp.grantPermissions(*Perms.required())
+        org.junit.Assert.assertTrue("다른 앱 위에 표시가 없으면 여전히 권한 안내", PermissionActivity.shouldShow(app))
+
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(true)
+        org.junit.Assert.assertFalse("모두 허용 → 메인", PermissionActivity.shouldShow(app))
+
+        shadowApp.denyPermissions(android.Manifest.permission.BLUETOOTH_CONNECT)
+        org.junit.Assert.assertTrue("나중에 권한을 끄면 다시 권한 안내", PermissionActivity.shouldShow(app))
+        org.robolectric.shadows.ShadowSettings.setCanDrawOverlays(false)
+    }
     @Test fun choiceSheetShows() {
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         var picked = -1

@@ -8,11 +8,6 @@ import androidx.core.content.edit
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("aospods", Context.MODE_PRIVATE)
 
-    /** S-02 권한 안내를 마쳤는지(동의 또는 나중에). */
-    var onboarded: Boolean
-        get() = sp.getBoolean("onboarded", false)
-        set(v) = sp.edit { putBoolean("onboarded", v) }
-
     var serviceEnabled: Boolean
         get() = sp.getBoolean("enabled", false)
         set(v) = sp.edit { putBoolean("enabled", v) }

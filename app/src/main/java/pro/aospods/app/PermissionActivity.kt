@@ -24,7 +24,6 @@ import pro.aospods.app.databinding.PermRowBinding
 class PermissionActivity : AppCompatActivity() {
 
     private lateinit var b: ActivityPermissionBinding
-    private lateinit var prefs: Prefs
 
     private class Item(val title: String, val reason: String, val runtime: List<String>, val overlay: Boolean = false)
 
@@ -56,7 +55,6 @@ class PermissionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        prefs = Prefs(this)
         b = ActivityPermissionBinding.inflate(layoutInflater)
         setContentView(b.root)
 
@@ -82,7 +80,7 @@ class PermissionActivity : AppCompatActivity() {
         }
 
         b.btnAgree.setOnClickListener {
-            prefs.onboarded = true; agreeFlow = true
+            agreeFlow = true
             val missing = Perms.missing(this)
             when {
                 missing.isEmpty() -> askOverlayThenFinish()
@@ -92,7 +90,7 @@ class PermissionActivity : AppCompatActivity() {
                 else -> runtimeLauncher.launch(missing.toTypedArray())
             }
         }
-        b.btnLater.setOnClickListener { prefs.onboarded = true; goMain() }
+        b.btnLater.setOnClickListener { goMain() }
     }
 
     override fun onResume() { super.onResume(); refresh() }
@@ -141,7 +139,8 @@ class PermissionActivity : AppCompatActivity() {
     }
 
     companion object {
-        /** 처음 실행이면 권한 안내를 보여 준다. 이후 권한이 빠지면 메인의 권한 카드가 안내. */
-        fun shouldShow(ctx: Context) = !Prefs(ctx).onboarded
+        /** 플로우차트 STEP 0(Figma 1161:54): 앱을 실행할 때마다 권한을 검사해 하나라도 없으면 권한 안내, 모두 있으면 메인.
+         *  예전엔 "한 번 봤음" 표시로만 판단해서, 덮어 설치·백업 복원·[나중에] 이후엔 권한이 없어도 안 떴음. */
+        fun shouldShow(ctx: Context) = !Perms.ok(ctx) || !Settings.canDrawOverlays(ctx)
     }
 }
