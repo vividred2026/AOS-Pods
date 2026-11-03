@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- S-01 스플래시 (Figma 1216:3004): 단색 보라 #6B00DE · "자유를 얻은 에어팟!" · AOS PODS 로고 · 하단 be:free © vividRed -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- S-01 스플래시 (Figma 1216:3004): 단색 보라 #6B00DE · "자유를 얻은 에어팟!" · AOS PODS 로고 · 하단 be:free © vividRed
+     배경 = 떠다니는 음표 루프 영상(res/raw/splash_bg_loop.mp4, 상태바·내비바 아래까지), 로고·문구는 코드로 등장 애니메이션 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/splash_bg">
+
+    <!-- 첫 프레임이 그려지기 전엔 투명(검은 화면 방지) → SplashActivity가 서서히 보이게 함 -->
+    <TextureView
+        android:id="@+id/splash_video"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"/>
+
+<LinearLayout
+    android:id="@+id/splash_fg"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/splash_bg"
     android:paddingHorizontal="18dp"
     android:paddingVertical="16dp">
 
@@ -18,11 +31,13 @@
         android:paddingBottom="90dp">
         <!-- Figma 1216:3004: 로고 184×116 아래 14dp에 문구 16 Medium, 로고+문구 묶음은 화면 중심보다 약 45dp 위 -->
         <ImageView
+            android:id="@+id/splash_logo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/logo_splash"
             android:contentDescription="AOS PODS"/>
         <TextView
+            android:id="@+id/splash_tagline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -55,3 +70,4 @@
             android:letterSpacing="-0.02"/>
     </LinearLayout>
 </LinearLayout>
+</FrameLayout>

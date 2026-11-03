@@ -29,7 +29,12 @@ class ScreenshotTest {
     }
     private fun shot(a: Activity, name: String) = save(a.window.decorView, name)
 
-    @Test fun splash() = shot(Robolectric.buildActivity(SplashActivity::class.java).setup().get(), "s01_splash")
+    @Test fun splash() {
+        val a = Robolectric.buildActivity(SplashActivity::class.java).setup().get()
+        // 로고 등장 애니메이션(약 1초)이 끝난 모습으로 캡처 — 다음 화면 전환(1.8초) 전
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(1200))
+        shot(a, "s01_splash")
+    }
 
     @Test fun permission() = shot(Robolectric.buildActivity(PermissionActivity::class.java).setup().get(), "s02_permission")
 
