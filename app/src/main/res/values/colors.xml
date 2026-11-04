@@ -23,6 +23,6 @@
     <color name="green">#FF30A46C</color>
     <color name="chip_bg">#FF6E6E73</color>
     <color name="pair_card">#FFEAEAEA</color>
-    <!-- 개인정보 시트 톱니 아이콘(Figma 1293:2244, 2026-11-04): 라이트 #D0D7DC · 다크 흰색 -->
+    <!-- 개인정보 시트 톱니 아이콘(Figma 1293:2244, 2026-11-04): #D0D7DC 고정(다크 모드도 같음 — 사용자 결정) -->
     <color name="icon_settings">#FFD0D7DC</color>
 </resources>

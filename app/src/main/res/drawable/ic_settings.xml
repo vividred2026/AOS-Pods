@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Figma appbar/appbarSetting (1293:2244): 32×32 톱니, 선 2.4, 색 @color/icon_settings(라이트 #D0D7DC · 다크 #FFFFFF, 2026-11-04) — 개인정보 시트의 "HW 진단 정보" 행 -->
+<!-- Figma appbar/appbarSetting (1293:2244): 32×32 톱니, 선 2.4, 색 @color/icon_settings(#D0D7DC 고정, 2026-11-04) — 개인정보 시트의 "HW 진단 정보" 행 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="32dp" android:height="32dp"
     android:viewportWidth="32" android:viewportHeight="32">
