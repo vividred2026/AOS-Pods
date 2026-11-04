@@ -125,7 +125,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 4. **배터리 표시**: 알림으로 표시 · 알림 아이콘에 퍼센트 표시 · 팝업 창으로 표시 (글자를 누르면 각 하위 설정, 스위치는 ON/OFF)
 5. **청취 모드** (AACP 연결 성공 시에만 표시): 노이즈 캔슬링 · 주변음 허용 · 적응형 · 끔
 6. **착용 감지**: 일시정지 · 다시 재생
-7. 정보: 다크 모드 · 개인정보처리방침 (**진단 정보 행은 2026-11-04 Figma `1230:2896`대로 개인정보 시트 안으로 이동** — 본문 아래 구분선 + 톱니 `ic_settings`(1293:2244) + "HW 진단 정보" 16 Medium 보라 밑줄 + 요약 13 → 탭하면 진단 시트)
+7. 정보: 다크 모드 · 개인정보처리방침 (**진단 정보 행은 2026-11-04 Figma `1230:2896`대로 개인정보 시트 안으로 이동** — 본문 아래 구분선 + 톱니 `ic_settings`(1293:2244, 색 `@color/icon_settings` 라이트 #D0D7DC · 다크 #FFFFFF — 2026-11-04) + "HW 진단 정보" 16 Medium 보라 밑줄 + 요약 13 → 탭하면 진단 시트)
 
 ### 권한
 `BLUETOOTH_SCAN`(neverForLocation) · `BLUETOOTH_CONNECT` · `ACCESS_FINE/COARSE_LOCATION` · `POST_NOTIFICATIONS` · `SYSTEM_ALERT_WINDOW`(팝업) · `FOREGROUND_SERVICE(_CONNECTED_DEVICE)` · `BLUETOOTH`/`BLUETOOTH_ADMIN`(maxSdk 30)
