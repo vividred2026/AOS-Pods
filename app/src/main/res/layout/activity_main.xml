@@ -195,25 +195,6 @@
                     android:id="@+id/swPopup" style="@style/RowSwitch"/>
             </LinearLayout>
 
-            <!-- 청취 모드 (AACP 연결 성공 시에만 표시) -->
-            <LinearLayout
-                android:id="@+id/listenSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-                <TextView style="@style/Category" android:text="청취 모드"/>
-                <LinearLayout android:id="@+id/rowListen" style="@style/Row"
-                    android:clickable="true" android:focusable="true">
-                    <LinearLayout style="@style/RowText">
-                        <TextView style="@style/RowTitle" android:text="청취 모드"/>
-                        <TextView android:id="@+id/listenValue" style="@style/RowSub" android:text="확인 중"/>
-                    </LinearLayout>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
-                </LinearLayout>
-            </LinearLayout>
-
             <!-- 착용 감지 (STEP 3 · 오디오 포커스) -->
             <TextView style="@style/Category" android:text="착용 감지"/>
             <TextView
@@ -222,6 +203,24 @@
                 android:layout_width="match_parent"
                 android:paddingHorizontal="16dp"
                 android:text="서비스를 켜면 착용 신호를 확인해요"/>
+
+            <!-- 청취 모드 설정 (Figma 1216:3535, 2026-11-04: 별도 카테고리 없이 착용 감지 섹션 안 · AACP 연결 성공 시에만 표시) -->
+            <LinearLayout
+                android:id="@+id/listenSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+                <LinearLayout android:id="@+id/rowListen" style="@style/Row"
+                    android:clickable="true" android:focusable="true">
+                    <LinearLayout style="@style/RowText">
+                        <TextView style="@style/RowTitle" android:text="청취 모드 설정"/>
+                        <TextView android:id="@+id/listenValue" style="@style/RowSub" android:text="확인 중"/>
+                    </LinearLayout>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout style="@style/Row">
                 <LinearLayout style="@style/RowText">

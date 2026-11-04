@@ -675,7 +675,7 @@ class MainActivity : AppCompatActivity() {
     private fun showListenModePicker() {
         val modes = Aap.MODES
         val labels = modes.map { Aap.modeName(it) }
-        Sheets.choice(this, "청취 모드", labels, modes.indexOf(AapSession.listenMode.value)) { w ->
+        Sheets.choice(this, "청취 모드 설정", labels, modes.indexOf(AapSession.listenMode.value)) { w ->
             val want = modes[w]
             if (!AapSession.setListenMode(want)) { toast("에어팟과 연결이 끊겨 바꾸지 못했어요"); return@choice }
             b.root.postDelayed({

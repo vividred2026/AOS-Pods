@@ -62,7 +62,7 @@ class ScreenshotTest {
 
     @Test fun listenSheet() {
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        val s = Sheets.choice(a, "청취 모드", listOf("노이즈 캔슬링", "주변음 허용", "적응형", "끔"), 0) {}
+        val s = Sheets.choice(a, "청취 모드 설정", listOf("노이즈 캔슬링", "주변음 허용", "적응형", "끔"), 0) {}
         save(s.dialog.window!!.decorView, "sheet_listen")
     }
 
