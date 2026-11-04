@@ -90,7 +90,6 @@ class MainActivity : AppCompatActivity() {
         b.rowModel.setOnClickListener { showModelPicker() }
         b.rowNight.setOnClickListener { showNightPicker() }
         b.rowPrivacy.setOnClickListener { showPrivacy() }
-        b.rowDiag.setOnClickListener { showDiag() }
 
         // 에어팟 연결 카드 (Figma M-00): 연결 전 = 안내 + [연결] / 연결 후 = 이름 - 모델 번호 · R/L/C 배터리
         b.btnPair.setOnClickListener { pairGuide() }
@@ -718,10 +717,38 @@ class MainActivity : AppCompatActivity() {
     private fun showPrivacy() {
         // 하단 시트(Figma `1230:2896`): 제목 + ✕ · 본문 · [확인]
         val s = Sheets.base(this, "개인정보 처리방침")
-        s.b.sheetBody.addView(sheetText(s.dialog.context,
+        val ctx = s.dialog.context
+        s.b.sheetBody.addView(sheetText(ctx,
             "aosPods는 AirPods가 주변에 보내는 블루투스 신호만 읽어 배터리 상태를 " +
             "표시합니다. 위치·배터리 정보를 수집하거나 외부로 전송하지 않으며, " +
             "모든 처리는 기기 안에서만 이루어집니다.", 14f, R.color.ink))
+        // 진단 정보 행(2026-11-04 메인 목록에서 이 시트로 이동): 구분선 · 톱니 32 · "HW 진단 정보"(16 Medium 보라 밑줄) + 요약 13
+        val d = ctx.resources.displayMetrics.density
+        fun dp(v: Int) = (v * d).toInt()
+        s.b.sheetBody.addView(View(ctx).apply { setBackgroundColor(ctx.getColor(R.color.line)) },
+            android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply { topMargin = dp(20) })
+        val row = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            isClickable = true; isFocusable = true
+            val tv = android.util.TypedValue(); ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)
+            setBackgroundResource(tv.resourceId)
+            setOnClickListener { s.dialog.dismiss(); showDiag() }
+        }
+        row.addView(android.widget.ImageView(ctx).apply {
+            setImageResource(R.drawable.ic_settings); contentDescription = "진단"
+        }, android.widget.LinearLayout.LayoutParams(dp(32), dp(32)))
+        val col = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        col.addView(android.widget.TextView(ctx).apply {
+            text = "HW 진단 정보"; textSize = 16f; typeface = androidx.core.content.res.ResourcesCompat.getFont(ctx, R.font.pretendard_medium)
+            setTextColor(ctx.getColor(R.color.accent)); paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+            letterSpacing = -0.019f; minHeight = dp(22); gravity = android.view.Gravity.CENTER_VERTICAL
+        })
+        col.addView(android.widget.TextView(ctx).apply {
+            text = "마지막 에어팟 신호 원문 · 해석값 확인/복사"; textSize = 13f
+            setTextColor(ctx.getColor(R.color.muted)); letterSpacing = -0.015f; minHeight = dp(18); gravity = android.view.Gravity.CENTER_VERTICAL
+        }, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.WRAP_CONTENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(4) })
+        row.addView(col, android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(6) })
+        s.b.sheetBody.addView(row, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(26) })
         s.button("확인") { s.dialog.dismiss() }
         s.dialog.show()
     }

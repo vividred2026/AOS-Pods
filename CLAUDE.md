@@ -110,7 +110,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 - **앱 아이콘**(2026-11-01, Figma Idea `1240:3505` 1024×1024 보라 `#6B00DE` + 흰 로고 `1240:3484`, 스타일 기준 Global Brand Hierarchy `iPV27Q03kJhBHp3R4RLKRN` 87:1531 — 단색 배경 + 흰 심벌의 AOS 적응형 아이콘): `mipmap-anydpi-v26/ic_launcher(_round).xml` = 배경 색 + 전경 `ic_launcher_foreground`(108dp 캔버스에 50dp 폭 — 보이는 72dp의 약 70%, 안전 영역 66dp 원 안) + monochrome(테마 아이콘). 캡처 `icon_full.png`·`icon_round.png`. Figma 규격 보드 `1249:2538`(1240:3505 오른쪽: 108dp 레이어 규격·마스크별 크기 줄·테마 아이콘)
 - **상태바·알림 작은 아이콘** `ic_pods`(2026-11-01, **Figma 보드 `1249:2538` 안 "윤곽" 시안 `1253:8` — 사용자 수정본**, 144 캔버스를 1/6로 축소한 24dp): 기울어진 이어버드 윤곽, 흰색 단색(시스템이 색을 입힘). 퍼센트 표시 ON이면 `PercentIcon` 숫자. 캡처 `status_icons.png`. Figma 보드의 아이콘 섹션은 사용자가 직접 관리
 - **로고 색**: `@color/logo` — 라이트 = 보라 `#6B00DE`, 다크 = 흰색 (`logo_bar`·`logo_perm`). 스플래시 로고는 항상 흰색
-- 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8, 토글 44×26 알약(흰 원 · 보라/회색 트랙). **권한 카드는 삭제**(2026-11-03 사용자 요청, Figma `1216:3535`에도 없음 — 권한은 시작 시 S-02에서만 받음). 연결 카드 제목은 Figma `1216:3535`대로 연결 전 "에어팟 자유 쟁취" / 연결 후 "자유를 얻은 에어팟". **카테고리 제목 행 = 위 24 + 글자 20 + 아래 6 = 50**(Figma `1243:2534`, 2026-11-04 사용자 간격 수정 반영 · `Category` 스타일 minHeight 50 · gravity bottom) · 행 높이 = 위아래 12 + 스위치 26 고정(minHeight 0) + 글자 minHeight 20/18(한 줄은 lineHeight가 높이에 안 잡힘) + 탭 영역 6dp 패딩은 -6dp 여백으로 상쇄 → 제목+요약 64 · 제목만 50. `ScreenshotTest.layoutDump`가 `screens/layout.txt`에 실측 높이를 남김. 개인정보 처리방침 = 하단 시트(`1230:2896`)
+- 메인: 흰 평면 배경, 앱바 로고, 좌우 16dp, [연결] 64×40 모서리 8, 토글 44×26 알약(흰 원 · 보라/회색 트랙). **권한 카드는 삭제**(2026-11-03 사용자 요청, Figma `1216:3535`에도 없음 — 권한은 시작 시 S-02에서만 받음). 연결 카드 제목은 Figma `1216:3535`대로 연결 전 "AirPods 자유쟁취" / 연결 후 "자유를 얻은 AirPods"(2026-11-04 문구 변경). **"서비스 활성화"·"모델" 제목은 14 Bold**(`RowTitleBold`, 2026-11-04 폰트 변경), 나머지 행 제목 15 Medium. **카테고리 제목 행 = 위 24 + 글자 20 + 아래 6 = 50**(Figma `1243:2534`, 2026-11-04 사용자 간격 수정 반영 · `Category` 스타일 minHeight 50 · gravity bottom) · 행 높이 = 위아래 12 + 스위치 26 고정(minHeight 0) + 글자 minHeight 20/18(한 줄은 lineHeight가 높이에 안 잡힘) + 탭 영역 6dp 패딩은 -6dp 여백으로 상쇄 → 제목+요약 64 · 제목만 50. `ScreenshotTest.layoutDump`가 `screens/layout.txt`에 실측 높이를 남김. 개인정보 처리방침 = 하단 시트(`1230:2896`)
 - **화면 캡처 확인**: `ScreenshotTest`(Robolectric NATIVE 렌더링)가 S-01·S-02·메인·시트·N-01을 `app/build/screens`에 PNG로 만들고 CI가 릴리스에 `screens.zip`으로 첨부 → `https://github.com/vividred2026/AOS-Pods/releases/download/latest/screens.zip`로 받아 Figma와 비교
 - CI 실패 원인은 주석(annotation)으로도 남김(이 환경은 Actions 로그 저장소 접근 불가) → `gh api repos/vividred2026/AOS-Pods/check-runs/<job id>/annotations`
 
@@ -125,7 +125,7 @@ app/src/test/  — 단위 테스트 + Robolectric
 4. **배터리 표시**: 알림으로 표시 · 알림 아이콘에 퍼센트 표시 · 팝업 창으로 표시 (글자를 누르면 각 하위 설정, 스위치는 ON/OFF)
 5. **청취 모드** (AACP 연결 성공 시에만 표시): 노이즈 캔슬링 · 주변음 허용 · 적응형 · 끔
 6. **착용 감지**: 일시정지 · 다시 재생
-7. 정보: 다크 모드 · 진단 정보 · 개인정보처리방침
+7. 정보: 다크 모드 · 개인정보처리방침 (**진단 정보 행은 2026-11-04 Figma `1230:2896`대로 개인정보 시트 안으로 이동** — 본문 아래 구분선 + 톱니 `ic_settings`(1293:2244) + "HW 진단 정보" 16 Medium 보라 밑줄 + 요약 13 → 탭하면 진단 시트)
 
 ### 권한
 `BLUETOOTH_SCAN`(neverForLocation) · `BLUETOOTH_CONNECT` · `ACCESS_FINE/COARSE_LOCATION` · `POST_NOTIFICATIONS` · `SYSTEM_ALERT_WINDOW`(팝업) · `FOREGROUND_SERVICE(_CONNECTED_DEVICE)` · `BLUETOOTH`/`BLUETOOTH_ADMIN`(maxSdk 30)

@@ -28,6 +28,12 @@
         <item name="android:gravity">center_vertical</item>
         <item name="android:letterSpacing">-0.013</item>
     </style>
+    <!-- Figma 1216:3535(2026-11-04 폰트 변경): 카드 바로 아래 "서비스 활성화"·"모델" 제목은 14 Bold(행간 20, 자간 -0.2) -->
+    <style name="RowTitleBold" parent="RowTitle">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/pretendard_bold</item>
+        <item name="android:letterSpacing">-0.014</item>
+    </style>
     <style name="RowSub">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>

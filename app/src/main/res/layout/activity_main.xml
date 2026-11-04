@@ -57,7 +57,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="에어팟 자유 쟁취"
+                            android:text="AirPods 자유쟁취"
                             android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:fontFamily="@font/pretendard_bold"
@@ -107,7 +107,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="자유를 얻은 에어팟"
+                            android:text="자유를 얻은 AirPods"
                             android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:fontFamily="@font/pretendard_bold"
@@ -148,7 +148,7 @@
             <!-- 서비스 활성화 -->
             <LinearLayout style="@style/Row">
                 <LinearLayout style="@style/RowText">
-                    <TextView style="@style/RowTitle" android:text="서비스 활성화"/>
+                    <TextView style="@style/RowTitleBold" android:text="서비스 활성화"/>
                 </LinearLayout>
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swService" style="@style/RowSwitch"/>
@@ -158,7 +158,7 @@
             <LinearLayout android:id="@+id/rowModel" style="@style/Row"
                 android:clickable="true" android:focusable="true">
                 <LinearLayout style="@style/RowText">
-                    <TextView style="@style/RowTitle" android:text="모델"/>
+                    <TextView style="@style/RowTitleBold" android:text="모델"/>
                     <TextView android:id="@+id/modelValue" style="@style/RowSub" android:text="에어팟 4"/>
                 </LinearLayout>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -249,16 +249,6 @@
                 <LinearLayout style="@style/RowText">
                     <TextView style="@style/RowTitle" android:text="다크 모드"/>
                     <TextView android:id="@+id/nightValue" style="@style/RowSub" android:text="시스템 기본값"/>
-                </LinearLayout>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
-            </LinearLayout>
-
-            <LinearLayout android:id="@+id/rowDiag" style="@style/Row"
-                android:clickable="true" android:focusable="true">
-                <LinearLayout style="@style/RowText">
-                    <TextView style="@style/RowTitle" android:text="진단 정보"/>
-                    <TextView style="@style/RowSub" android:text="마지막 에어팟 신호 원문 · 해석값 확인/복사"/>
                 </LinearLayout>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="›" android:textColor="@color/muted" android:textSize="20sp"/>
