@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showNightPicker() {
         val labels = Prefs.NIGHT_LABELS
-        Sheets.choice(this, "다크 모드", labels, Prefs.NIGHT_VALUES.indexOf(prefs.nightMode)) { w ->
+        Sheets.choice(this, "화면모드 설정", labels, Prefs.NIGHT_VALUES.indexOf(prefs.nightMode)) { w ->
             prefs.nightMode = Prefs.NIGHT_VALUES[w]; b.nightValue.text = labels[w]
             AppCompatDelegate.setDefaultNightMode(prefs.nightMode)
         }

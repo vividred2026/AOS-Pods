@@ -247,7 +247,7 @@
             <LinearLayout android:id="@+id/rowNight" style="@style/Row"
                 android:clickable="true" android:focusable="true">
                 <LinearLayout style="@style/RowText">
-                    <TextView style="@style/RowTitle" android:text="다크 모드"/>
+                    <TextView style="@style/RowTitle" android:text="화면모드 설정"/>
                     <TextView android:id="@+id/nightValue" style="@style/RowSub" android:text="시스템 기본값"/>
                 </LinearLayout>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
