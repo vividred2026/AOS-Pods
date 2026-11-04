@@ -101,6 +101,8 @@ class ScreenshotTest {
             if (v is android.view.ViewGroup) for (i in 0 until v.childCount) dump(v.getChildAt(i), depth + 1)
         }
         dump(row, 0)
+        sb.append("-- 카테고리 (Figma 1243:2534: 높이 50 = 위 24 + 글자 20 + 아래 6)\n")
+        dump(a.findViewById(R.id.catBattery), 0)
         File(out, "layout.txt").writeText(sb.toString())
     }
 

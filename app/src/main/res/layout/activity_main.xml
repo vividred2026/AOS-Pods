@@ -166,7 +166,7 @@
             </LinearLayout>
 
             <!-- 배터리 표시 -->
-            <TextView style="@style/Category" android:text="배터리 표시"/>
+            <TextView style="@style/Category" android:id="@+id/catBattery" android:text="배터리 표시"/>
 
             <LinearLayout style="@style/Row">
                 <LinearLayout android:id="@+id/textNotif" style="@style/RowTextTap">
