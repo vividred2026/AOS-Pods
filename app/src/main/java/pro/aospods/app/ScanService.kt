@@ -105,7 +105,7 @@ class ScanService : Service() {
             if (paused && !aapPaused) { aapPaused = true; AapSession.stop(); aapPods = null; aapWorn = null }
             else if (!paused && aapPaused) { aapPaused = false; syncAap() }
             updateScan()   // 연결·전용 채널·화면 상태에 맞게 스캔 켜기/끄기/강도 조절
-            val scanState = if (!scanning) "스캔 쉬는 중(에어팟 미연결)" else
+            val scanState = if (!scanning) (if (AapSession.connected.value) "스캔 쉬는 중(전용 채널 사용)" else "스캔 쉬는 중(에어팟 미연결)") else
                 (if (scanAllMode) "전체 스캔" else "애플 필터") + "·" + scanModeName(scanMode)
             PodsRepo.diagLine = "진단($scanState${if (paused) " · AACP 잠시 끊음 ${(PodsRepo.aapPauseUntil - now) / 1000}초 남음" else ""}): " +
                 "BLE $cTotal · 애플 $cApple · 07 $c07(배터리형 0719 $c0719 · 기타 $c07Other) · 반영 $cPods" +
@@ -347,7 +347,9 @@ class ScanService : Service() {
         BtState.connectedName.value == null -> null
         // 진단 정보를 여는 동안(90초)은 빠른 스캔 — 저전력(5초에 0.5초)으로는 짧게 터지는 광고를 거의 놓침(실기기: AACP 중 0x07 0건)
         System.currentTimeMillis() < PodsRepo.boostUntil && isScreenOn() -> ScanSettings.SCAN_MODE_LOW_LATENCY
-        AapSession.connected.value -> ScanSettings.SCAN_MODE_LOW_POWER
+        // 전용 채널이 열려 있으면 에어팟이 근접 광고를 보내지 않음(실기기: 빠른 스캔으로도 0x07 0건) → 스캔은 배터리만 쓰므로 중지
+        // (배터리·착용은 AACP로 받음. 2026-11-05 사용자 "백그라운드 배터리 사용" 경고 대응)
+        AapSession.connected.value -> null
         !isScreenOn() -> ScanSettings.SCAN_MODE_LOW_POWER
         else -> ScanSettings.SCAN_MODE_LOW_LATENCY
     }
